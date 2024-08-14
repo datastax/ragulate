@@ -2,14 +2,14 @@
 
 A tool for evaluating RAG pipelines
 
-![ragulate_logo](https://raw.githubusercontent.com/datastax/ragulate/images/logo_smaller.png)
+![ragulate_logo](https://raw.githubusercontent.com/datastax/ragulate/main/images/logo_smaller.png)
 
 ## The Metrics
 
 The RAGulate currently reports 4 relevancy metrics: Answer Correctness, Answer Relevance, Context Relevance, and Groundedness.
 
 
-![metrics_diagram](https://raw.githubusercontent.com/datastax/ragulate/images/metrics.png)
+![metrics_diagram](https://raw.githubusercontent.com/datastax/ragulate/main/images/metrics.png)
 
 * Answer Correctness
   * How well does the generated answer match the ground-truth answer?
@@ -28,7 +28,7 @@ The RAGulate currently reports 4 relevancy metrics: Answer Correctness, Answer R
 
 The tool outputs results as images like this:
 
-![example_output](https://raw.githubusercontent.com/datastax/ragulate/images/example.png)
+![example_output](https://raw.githubusercontent.com/datastax/ragulate/main/images/example.png)
 
 These images show distribution box plots of the metrics for different test runs.
 
@@ -47,14 +47,14 @@ pip install ragstack-ai-ragulate
   any other variables that you will pass during your experimentation. The method should ingest the passed
   file into your vector store.
 
-   See the `ingest()` method in [open_ai_chunk_size_and_k.py](open_ai_chunk_size_and_k.py) as an example.
+   See the `ingest()` method in [open_ai_chunk_size_and_k.py](examples/open_ai_chunk_size_and_k.py) as an example.
    This method configures an ingest pipeline using the parameter `chunk_size` and ingests the file passed.
 
 1. Wrap your query pipeline in a single python method, and return it. The method should have parameters for
   any variables that you will pass during your experimentation. Currently only LangChain LCEL query pipelines
   are supported.
 
-   See the `query()` method in [open_ai_chunk_size_and_k.py](open_ai_chunk_size_and_k.py) as an example.
+   See the `query()` method in [open_ai_chunk_size_and_k.py](examples/open_ai_chunk_size_and_k.py) as an example.
    This method returns a LangChain LCEL pipeline configured by the parameters `chunk_size` and `k`.
 
 Note: It is helpful to have a `**kwargs` param in your pipeline method definitions, so that if extra params
@@ -82,7 +82,7 @@ commands:
 
 ### Example
 
-For the examples below, we will use the example experiment [open_ai_chunk_size_and_k.py](open_ai_chunk_size_and_k.py)
+For the examples below, we will use the example experiment [open_ai_chunk_size_and_k.py](examples/open_ai_chunk_size_and_k.py)
 and see how the RAG metrics change for changes in `chunk_size` and `k` (number of documents retrieved).
 
 There are two ways to run Ragulate to run an experiment. Either define an experiment with a config file or execute it manually step by step.
@@ -91,7 +91,7 @@ There are two ways to run Ragulate to run an experiment. Either define an experi
 
 **Note: Running via config file is a new feature and it is not as stable as running manually.**
 
-1. Create a yaml config file with a similar format to the example config: [example_config.yaml](example_config.yaml).  This defines the same test as shown manually below.
+1. Create a yaml config file with a similar format to the example config: [example_config.yaml](examples/config.yaml).  This defines the same test as shown manually below.
 
 1. Execute it with a single command:
 
