@@ -19,6 +19,9 @@ jobs:
           - "3.11"
           - "3.10"
     steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
       - name: Setup
         uses: ./.github/actions/setup-python-uv
         with:
@@ -34,6 +37,9 @@ jobs:
     name: Type-Check
     runs-on: ubuntu-latest
     steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
       - name: Setup
         uses: ./.github/actions/setup-python-uv
         with:
@@ -55,6 +61,9 @@ jobs:
           - "3.11"
           - "3.10"
     steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
       - name: Setup
         uses: ./.github/actions/setup-python-uv
         with:
@@ -76,6 +85,9 @@ jobs:
           - "3.11"
           - "3.10"
     steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
       - name: Setup
         uses: ./.github/actions/setup-python-uv
         with:

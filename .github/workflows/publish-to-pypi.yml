@@ -9,11 +9,15 @@ jobs:
   build-and-publish:
     runs-on: ubuntu-latest
     steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Ensures Git history and tags are fully fetched
+
       - name: Setup
         uses: ./.github/actions/setup-python-uv
         with:
           python-version: 3.12
-          fetch-depth: 0  # Ensures Git history and tags are fully fetched
 
       - name: Update version in pyproject.toml based on Git tag
         run: |
