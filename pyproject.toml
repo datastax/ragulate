@@ -1,0 +1,114 @@
+[project]
+name = "ragulate"
+version = "0.0.14rc3"
+description = "A tool for evaluating RAG pipelines"
+authors = [{ name = "DataStax" }]
+license = {file = "LICENSE"}
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "trulens-eval==0.33.0",
+    "kaleido==0.2.1",
+    "inflection>=0.5.1",
+    "llama-index-core==0.10.31",
+    "numpy>=1.23.5",
+    "pandas>=2.2.2",
+    "plotly>=5.23.0",
+    "python-dotenv>=1.0.1",
+    "tqdm>=4.66.5",
+    "pyyaml>=6.0.2",
+    "cerberus>=1.3.5",
+    "pydantic~=2.7.4",
+    "setuptools>=72.2.0",
+    "aiofiles>=24.1.0",
+    "seaborn>=0.13.2",
+    "llama-index==0.10.31",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "ruff>=0.5.7",
+    "pytest>=8.3.2",
+    "mypy>=1.10.1",
+    "types-pyyaml>=6.0.12.20240808",
+    "types-aiofiles>=24.1.0.20240626",
+    "types-seaborn>=0.13.2.20240813",
+    "types-setuptools>=71.1.0.20240813",
+    "types-tqdm>=4.66.0.20240417",
+    "pandas-stubs>=2.2.2.240807",
+    "langchain-core>=0.2.8",
+    "langchain-community>=0.2.5",
+    "langchain-openai>=0.1.14",
+    "yamllint>=1.35.1",
+]
+
+[tool.pytest.ini_options]
+log_cli = true
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+
+[project.scripts]
+ragulate = "ragulate.cli:main"
+test_unit = "scripts.test_unit_runner:main"
+test_integration = "scripts.test_integration_runner:main"
+
+[tool.mypy]
+disallow_any_generics = true
+disallow_incomplete_defs = true
+disallow_untyped_calls = true
+disallow_untyped_decorators = true
+disallow_untyped_defs = true
+follow_imports = "normal"
+ignore_missing_imports = true
+no_implicit_reexport = true
+pretty = true
+show_error_codes = true
+show_error_context = true
+strict = true
+strict_equality = true
+strict_optional = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unreachable = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = "trulens_eval.*,plotly.*,cerberus.*,transformers.*"
+ignore_missing_imports = true
+
+
+[tool.ruff.lint]
+pydocstyle.convention = "google"
+select = ["ALL"]
+ignore = [
+    "ANN", # Already checked by mypy
+    "C90", # Do we want to activate (complexity) ?
+    "COM812", # Messes with the formatter
+    "D100", # Do we want to activate (docstring in module) ?
+    "D104", # Do we want to activate (docstring in package) ?
+    "D105", # Do we want to activate (docstring in magic method) ?
+    "D107", # Do we want to activate (docstring in __init__) ?
+    "EM", # Do we want to activate (error messages) ?
+    "ERA", # Do we want to activate (no commented code) ?
+    "FBT", # Do we want to activate (boolean trap) ?
+    "FIX", # Do we want to activate (no fix-me) ?
+    "ISC001", # Messes with the formatter
+    "PERF203", # Incorrect detection
+    "PLR09", # TODO: do we enforce these ones (complexity) ?
+    "PTH", # Do we want to activate (use pathlib) ?
+    "TRY003", # A bit too strict ?
+    "TD002", # We know the TODOs authors with git. Activate anyway ?
+    "TD003", # Do we want to activate (TODOs with issue reference) ?
+]
+
+[tool.ruff.lint.per-file-ignores]
+"{colbert,open_ai}_chunk_size_and_k.py" = [
+    "D103",
+    "INP001",
+    "T201",
+]

@@ -1,0 +1,88 @@
+name: CI - RAGulate tests
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ragulate-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.12"
+          - "3.11"
+          - "3.10"
+    steps:
+      - name: Setup
+        uses: ./.github/actions/setup-python-uv
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run lint
+        run: make lint
+
+      - name: Minimize uv cache
+        run: uv cache prune --ci
+
+  type-check:
+    name: Type-Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup
+        uses: ./.github/actions/setup-python-uv
+        with:
+          python-version: 3.12
+
+      - name: Run type-check
+        run: make type-check
+
+      - name: Cleanup
+        uses: ./.github/actions/cleanup-python-uv
+
+  unit-tests:
+    name: Unit-Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.12"
+          - "3.11"
+          - "3.10"
+    steps:
+      - name: Setup
+        uses: ./.github/actions/setup-python-uv
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run unit tests
+        run: make unit-tests
+
+      - name: Cleanup
+        uses: ./.github/actions/cleanup-python-uv
+
+  integration-tests:
+    name: Integration-Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.12"
+          - "3.11"
+          - "3.10"
+    steps:
+      - name: Setup
+        uses: ./.github/actions/setup-python-uv
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run integration tests
+        run: make integration-tests
+
+      - name: Cleanup
+        uses: ./.github/actions/cleanup-python-uv

@@ -1,0 +1,39 @@
+name: Publish package to PyPI
+
+on:
+  push:
+    tags:
+      - "v*"  # Trigger the workflow on push to tags like v1.0, v2.0 etc.
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup
+        uses: ./.github/actions/setup-python-uv
+        with:
+          python-version: 3.12
+          fetch-depth: 0  # Ensures Git history and tags are fully fetched
+
+      - name: Update version in pyproject.toml based on Git tag
+        run: |
+          VERSION=$(git describe --tags $(git rev-list --tags --max-count=1) | sed 's/^v//')
+          sed -i "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
+
+      - name: Echo pyproject.toml
+        run: cat pyproject.toml
+
+      - name: Generate requirements.txt
+        run: uv pip compile pyproject.toml -o requirements.txt
+
+      - name: Build Package
+        run: uvx --from build pyproject-build --installer uv
+
+      - name: Publish Package
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_AUTH_TOKEN }}
+        run: uvx twine upload dist/*
+
+      - name: Minimize uv cache
+        run: uv cache prune --ci

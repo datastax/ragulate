@@ -1,0 +1,8 @@
+name: "Cleanup Python and UV"
+description: "Cleans up Python and UV"
+runs:
+  using: "composite"
+  steps:
+    - name: Minimize uv cache
+      shell: sh
+      run: uv cache prune --ci
