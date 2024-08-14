@@ -4,18 +4,9 @@ inputs:
   python-version:
     description: "Python version to set up"
     required: true
-  fetch-depth:
-    description: "Depth of Git history to fetch"
-    required: false
-    default: "1"
 runs:
   using: "composite"
   steps:
-    - name: Check out the repo
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: ${{ inputs.fetch-depth }}
-
     - name: Set up uv
       shell: sh
       run: make install-uv
