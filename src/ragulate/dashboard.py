@@ -168,16 +168,19 @@ class Ragulate(SingletonPerName):  # type: ignore[misc]
                 proc: Popen[str], pipe: IO[str] | None, out: Any | None, started: Event
             ) -> None:
                 while proc.poll() is None:
-                    line = pipe.readline()
-                    if "url" in line:
-                        started.set()
-                        line = "Go to this url and submit the ip given here. " + line
+                    if pipe is not None:
+                        line = pipe.readline()
+                        if "url" in line:
+                            started.set()
+                            line = (
+                                "Go to this url and submit the ip given here. " + line
+                            )
 
-                    if out is not None:
-                        out.append_stdout(line)
+                        if out is not None:
+                            out.append_stdout(line)
 
-                    else:
-                        print(line)
+                        else:
+                            print(line)
 
             Ragulate.tunnel_listener_stdout = Thread(
                 target=listen_to_tunnel,
@@ -200,34 +203,35 @@ class Ragulate(SingletonPerName):  # type: ignore[misc]
             proc: Popen[str], pipe: IO[str] | None, out: Any | None, started: Event
         ) -> None:
             while proc.poll() is None:
-                line = pipe.readline()
-                if IN_COLAB:
-                    if "External URL: " in line:
-                        started.set()
-                        line = line.replace(
-                            "External URL: http://", "Submit this IP Address: "
-                        )
-                        line = line.replace(f":{port}", "")
+                if pipe is not None:
+                    line = pipe.readline()
+                    if IN_COLAB:
+                        if "External URL: " in line:
+                            started.set()
+                            line = line.replace(
+                                "External URL: http://", "Submit this IP Address: "
+                            )
+                            line = line.replace(f":{port}", "")
+                            if out is not None:
+                                out.append_stdout(line)
+                            else:
+                                print(line)
+                            Ragulate._dashboard_urls = (
+                                line  # store the url when dashboard is started
+                            )
+                    else:
+                        if "Network URL: " in line:
+                            url = line.split(": ")[1]
+                            url = url.rstrip()
+                            print(f"Dashboard started at {url} .")
+                            started.set()
+                            Ragulate._dashboard_urls = (
+                                line  # store the url when dashboard is started
+                            )
                         if out is not None:
                             out.append_stdout(line)
                         else:
                             print(line)
-                        Ragulate._dashboard_urls = (
-                            line  # store the url when dashboard is started
-                        )
-                else:
-                    if "Network URL: " in line:
-                        url = line.split(": ")[1]
-                        url = url.rstrip()
-                        print(f"Dashboard started at {url} .")
-                        started.set()
-                        Ragulate._dashboard_urls = (
-                            line  # store the url when dashboard is started
-                        )
-                    if out is not None:
-                        out.append_stdout(line)
-                    else:
-                        print(line)
             if out is not None:
                 out.append_stdout("Dashboard closed.")
             else:
