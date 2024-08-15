@@ -4,7 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from ragulate.datasets import BaseDataset  # noqa: TCH001
+from ragulate.datasets import BaseDataset
 
 
 class Step(BaseModel):
