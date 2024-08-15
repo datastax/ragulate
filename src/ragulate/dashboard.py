@@ -212,14 +212,18 @@ class Ragulate(SingletonPerName):  # type: ignore[misc]
                             out.append_stdout(line)
                         else:
                             print(line)
-                        Ragulate._dashboard_urls = line  # store the url when dashboard is started
+                        Ragulate._dashboard_urls = (
+                            line  # store the url when dashboard is started
+                        )
                 else:
                     if "Network URL: " in line:
                         url = line.split(": ")[1]
                         url = url.rstrip()
                         print(f"Dashboard started at {url} .")
                         started.set()
-                        Ragulate._dashboard_urls = line  # store the url when dashboard is started
+                        Ragulate._dashboard_urls = (
+                            line  # store the url when dashboard is started
+                        )
                     if out is not None:
                         out.append_stdout(line)
                     else:
