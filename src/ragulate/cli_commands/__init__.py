@@ -1,5 +1,5 @@
 from .compare import setup_compare
-from .dashboard import setup_dashboard
+from .debug import setup_dashboard
 from .download import setup_download
 from .ingest import setup_ingest
 from .query import setup_query
