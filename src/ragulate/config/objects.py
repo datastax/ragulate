@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from ragulate.datasets import BaseDataset
 
@@ -28,10 +28,7 @@ class Recipe(BaseModel):
 class Config(BaseModel):
     """Config object."""
 
-    class Config:
-        """Pydantic configuration."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     recipes: dict[str, Recipe] = {}
     datasets: dict[str, BaseDataset] = {}
