@@ -2,7 +2,9 @@
 .mypy_cache
 .pytest_cache
 .ruff_cache
+.streamlit
 .venv
+.vscode
 __pycache__
 
 datasets
