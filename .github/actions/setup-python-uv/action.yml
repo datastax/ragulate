@@ -25,3 +25,7 @@ runs:
         restore-keys: |
           uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
           uv-${{ runner.os }}
+
+    - name: Install dependencies
+      shell: sh
+      run: uv sync --dev

@@ -2,7 +2,8 @@
 name = "ragulate"
 version = "0.0.14rc3"
 description = "A tool for evaluating RAG pipelines"
-authors = [{ name = "DataStax" }]
+authors = [{ name = "Eric Pinzur", email = "eric.pinzur@datastax.com" }]
+maintainers = [{name = "Datastax"}]
 license = {file = "LICENSE"}
 readme = "README.md"
 requires-python = ">=3.10"
@@ -51,11 +52,10 @@ log_cli = true
 log_cli_level = "INFO"
 log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+pythonpath = "src"
 
 [project.scripts]
 ragulate = "ragulate.cli:main"
-test_unit = "scripts.test_unit_runner:main"
-test_integration = "scripts.test_integration_runner:main"
 
 [tool.mypy]
 disallow_any_generics = true

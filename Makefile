@@ -17,7 +17,7 @@ type-check:
 	uv run mypy src/ tests/
 
 unit-tests:
-	uv run test_unit
+	uv run pytest tests/unit_tests/
 
 integration-tests:
-	uv run test_integration
+	uv run pytest tests/integration_tests/
