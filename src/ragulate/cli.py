@@ -1,5 +1,3 @@
-# this must be imported first for dynamic module loading to function properly
-import setuptools  # noqa: F401, I001
 import argparse
 
 from dotenv import load_dotenv
