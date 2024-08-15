@@ -1,6 +1,10 @@
 import argparse
+import sys
 
 from dotenv import load_dotenv
+from typing_extensions import Generic, Protocol
+
+sys.modules["pip._vendor.typing_extensions"] = sys.modules["typing_extensions"]
 
 from . import cli_commands
 from .logging_config import logger
