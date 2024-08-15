@@ -1,71 +1,61 @@
 from __future__ import annotations
 
 import sys
-from typing_extensions import Protocol, Generic
 
-sys.modules['pip._vendor.typing_extensions'] = sys.modules['typing_extensions']
+from typing_extensions import Annotated, Doc
+
+sys.modules["pip._vendor.typing_extensions"] = sys.modules["typing_extensions"]
 
 
-from typing_extensions import Annotated
-from typing_extensions import Doc
-
-from datetime import timedelta
 import logging
-from multiprocessing import Process
 import os
-from pathlib import Path
 import socket
-import subprocess
 import sys
 import threading
-from threading import Thread
-from typing import Optional
+from pathlib import Path
+from subprocess import PIPE, Popen
+from threading import Event, Thread
+from typing import IO, Any, Optional
 
-import humanize
-
-from trulens_eval.utils import notebook_utils
-from trulens_eval.utils import python
+from trulens_eval.utils.notebook_utils import is_notebook, setup_widget_stdout_stderr
+from trulens_eval.utils.python import SingletonPerName
 
 logger = logging.getLogger(__name__)
 
-DASHBOARD_START_TIMEOUT: Annotated[int, Doc("Seconds to wait for dashboard to start")] = 30
+DASHBOARD_START_TIMEOUT: Annotated[
+    int, Doc("Seconds to wait for dashboard to start")
+] = 30
 
 
-def humanize_seconds(seconds: float):
-    return humanize.naturaldelta(timedelta(seconds=seconds))
-
-
-class Ragulate(python.SingletonPerName):
-    """Ragulate is the main class that provides an entry points to ragulate.
-    """
+class Ragulate(SingletonPerName):  # type: ignore[misc]
+    """Ragulate is the main class that provides an entry points to ragulate."""
 
     _dashboard_urls: Optional[str] = None
 
-    _dashboard_proc: Optional[Process] = None
+    _dashboard_proc: Optional[Popen[str]] = None
     """[Process][multiprocessing.Process] executing the dashboard streamlit app.
 
     Is set to `None` if not executing.
     """
 
-    _evaluator_stop: Optional[threading.Event] = None
+    _evaluator_stop: Optional[Event] = None
     """Event for stopping the deferred evaluator which runs in another thread."""
-
-
 
     def find_unused_port(self) -> int:
         """Find an unused port."""
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(('', 0))
+            s.bind(("", 0))
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            return s.getsockname()[1]
+            unused_port: int = s.getsockname()[1]
+            return unused_port
 
     def run_dashboard(
         self,
         port: Optional[int] = None,
         address: Optional[str] = None,
         force: bool = False,
-        _dev: Optional[Path] = None
-    ) -> Process:
+        _dev: Optional[Path] = None,
+    ) -> Popen[str]:
         """Run a streamlit dashboard to view logged results and apps.
 
         Args:
@@ -92,7 +82,7 @@ class Ragulate(python.SingletonPerName):
 
         """
 
-        IN_COLAB = 'google.colab' in sys.modules
+        IN_COLAB = "google.colab" in sys.modules
         if IN_COLAB and address is not None:
             raise ValueError("`address` argument cannot be used in colab.")
 
@@ -102,16 +92,16 @@ class Ragulate(python.SingletonPerName):
         print("Starting dashboard ...")
 
         # Create .streamlit directory if it doesn't exist
-        streamlit_dir = os.path.join(os.getcwd(), '.streamlit')
+        streamlit_dir = os.path.join(os.getcwd(), ".streamlit")
         os.makedirs(streamlit_dir, exist_ok=True)
 
         # Create config.toml file path
-        config_path = os.path.join(streamlit_dir, 'config.toml')
+        config_path = os.path.join(streamlit_dir, "config.toml")
 
         # Check if the file already exists
         if not os.path.exists(config_path):
-            with open(config_path, 'w') as f:
-                f.write('[theme]\n')
+            with open(config_path, "w") as f:
+                f.write("[theme]\n")
                 f.write('primaryColor="#0A2C37"\n')
                 f.write('backgroundColor="#FFFFFF"\n')
                 f.write('secondaryBackgroundColor="F5F5F5"\n')
@@ -121,27 +111,27 @@ class Ragulate(python.SingletonPerName):
             print("Config file already exists. Skipping writing process.")
 
         # Create credentials.toml file path
-        cred_path = os.path.join(streamlit_dir, 'credentials.toml')
+        cred_path = os.path.join(streamlit_dir, "credentials.toml")
 
         # Check if the file already exists
         if not os.path.exists(cred_path):
-            with open(cred_path, 'w') as f:
-                f.write('[general]\n')
+            with open(cred_path, "w") as f:
+                f.write("[general]\n")
                 f.write('email=""\n')
         else:
             print("Credentials file already exists. Skipping writing process.")
 
-        #run home with subprocess
+        # run home with subprocess
         home_path = os.path.join("src", "ragulate", "pages", "home.py")
 
         if Ragulate._dashboard_proc is not None:
             print("Dashboard already running at path:", Ragulate._dashboard_urls)
             return Ragulate._dashboard_proc
 
-        env_opts = {}
+        env = None
         if _dev is not None:
-            env_opts['env'] = os.environ
-            env_opts['env']['PYTHONPATH'] = str(_dev)
+            env = os.environ
+            env["PYTHONPATH"] = str(_dev)
 
         if port is None:
             port = self.find_unused_port()
@@ -154,35 +144,30 @@ class Ragulate(python.SingletonPerName):
 
         args += [home_path]
 
-        proc = subprocess.Popen(
-            args,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            **env_opts
-        )
+        proc = Popen(args=args, stdout=PIPE, stderr=PIPE, text=True, env=env)
 
         started = threading.Event()
         tunnel_started = threading.Event()
-        if notebook_utils.is_notebook():
-            out_stdout, out_stderr = notebook_utils.setup_widget_stdout_stderr()
+        if is_notebook():
+            out_stdout, out_stderr = setup_widget_stdout_stderr()
         else:
             out_stdout = None
             out_stderr = None
 
         if IN_COLAB:
-            tunnel_proc = subprocess.Popen(
-                ["npx", "localtunnel", "--port",
-                 str(port)],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+            colab_args = ["npx", "localtunnel", "--port", str(port)]
+            tunnel_proc = Popen(
+                args=colab_args,
+                stdout=PIPE,
+                stderr=PIPE,
                 text=True,
-                **env_opts
+                env=env,
             )
 
-            def listen_to_tunnel(proc: subprocess.Popen, pipe, out, started):
+            def listen_to_tunnel(
+                proc: Popen[str], pipe: IO[str] | None, out: Any | None, started: Event
+            ) -> None:
                 while proc.poll() is None:
-
                     line = pipe.readline()
                     if "url" in line:
                         started.set()
@@ -196,25 +181,24 @@ class Ragulate(python.SingletonPerName):
 
             Ragulate.tunnel_listener_stdout = Thread(
                 target=listen_to_tunnel,
-                args=(
-                    tunnel_proc, tunnel_proc.stdout, out_stdout, tunnel_started
-                )
+                args=(tunnel_proc, tunnel_proc.stdout, out_stdout, tunnel_started),
             )
             Ragulate.tunnel_listener_stderr = Thread(
                 target=listen_to_tunnel,
-                args=(
-                    tunnel_proc, tunnel_proc.stderr, out_stderr, tunnel_started
-                )
+                args=(tunnel_proc, tunnel_proc.stderr, out_stderr, tunnel_started),
             )
             Ragulate.tunnel_listener_stdout.daemon = True
             Ragulate.tunnel_listener_stderr.daemon = True
             Ragulate.tunnel_listener_stdout.start()
             Ragulate.tunnel_listener_stderr.start()
-            if not tunnel_started.wait(timeout=DASHBOARD_START_TIMEOUT
-                                      ):  # This might not work on windows.
+            if not tunnel_started.wait(
+                timeout=DASHBOARD_START_TIMEOUT
+            ):  # This might not work on windows.
                 raise RuntimeError("Tunnel failed to start in time. ")
 
-        def listen_to_dashboard(proc: subprocess.Popen, pipe, out, started):
+        def listen_to_dashboard(
+            proc: Popen[str], pipe: IO[str] | None, out: Any | None, started: Event
+        ) -> None:
             while proc.poll() is None:
                 line = pipe.readline()
                 if IN_COLAB:
@@ -246,12 +230,10 @@ class Ragulate(python.SingletonPerName):
                 print("Dashboard closed.")
 
         Ragulate.dashboard_listener_stdout = Thread(
-            target=listen_to_dashboard,
-            args=(proc, proc.stdout, out_stdout, started)
+            target=listen_to_dashboard, args=(proc, proc.stdout, out_stdout, started)
         )
         Ragulate.dashboard_listener_stderr = Thread(
-            target=listen_to_dashboard,
-            args=(proc, proc.stderr, out_stderr, started)
+            target=listen_to_dashboard, args=(proc, proc.stderr, out_stderr, started)
         )
 
         # Purposely block main process from ending and wait for dashboard.
@@ -302,21 +284,23 @@ class Ragulate(python.SingletonPerName):
 
             else:
                 if sys.platform.startswith("win"):
-                    raise RuntimeError(
-                        "Force stop option is not supported on windows."
-                    )
+                    raise RuntimeError("Force stop option is not supported on windows.")
 
                 print("Force stopping dashboard ...")
                 import os
                 import pwd  # PROBLEM: does not exist on windows
 
                 import psutil
+
                 username = pwd.getpwuid(os.getuid())[0]
                 for p in psutil.process_iter():
                     try:
                         cmd = " ".join(p.cmdline())
-                        if "streamlit" in cmd and "Leaderboard.py" in cmd and p.username(
-                        ) == username:
+                        if (
+                            "streamlit" in cmd
+                            and "Leaderboard.py" in cmd
+                            and p.username() == username
+                        ):
                             print(f"killing {p}")
                             p.kill()
                     except Exception as e:
@@ -326,10 +310,12 @@ class Ragulate(python.SingletonPerName):
             Ragulate._dashboard_proc.kill()
             Ragulate._dashboard_proc = None
 
+
 def main() -> None:
     """Main function for the UI."""
     ragulate = Ragulate()
     ragulate.run_dashboard(port=8000)
+
 
 if __name__ == "__main__":
     main()

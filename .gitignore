@@ -4,6 +4,7 @@
 .ruff_cache
 .streamlit
 .venv
+.vscode
 __pycache__
 
 datasets
