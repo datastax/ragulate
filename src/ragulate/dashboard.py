@@ -107,8 +107,6 @@ class Ragulate(SingletonPerName):  # type: ignore[misc]
                 f.write('secondaryBackgroundColor="F5F5F5"\n')
                 f.write('textColor="#0A2C37"\n')
                 f.write('font="sans serif"\n')
-        else:
-            print("Config file already exists. Skipping writing process.")
 
         # Create credentials.toml file path
         cred_path = os.path.join(streamlit_dir, "credentials.toml")
@@ -118,11 +116,10 @@ class Ragulate(SingletonPerName):  # type: ignore[misc]
             with open(cred_path, "w") as f:
                 f.write("[general]\n")
                 f.write('email=""\n')
-        else:
-            print("Credentials file already exists. Skipping writing process.")
 
         # run home with subprocess
-        home_path = os.path.join("src", "ragulate", "pages", "home.py")
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        home_path = os.path.join(current_dir, "pages", "home.py")
 
         if Ragulate._dashboard_proc is not None:
             print("Dashboard already running at path:", Ragulate._dashboard_urls)
@@ -136,7 +133,9 @@ class Ragulate(SingletonPerName):  # type: ignore[misc]
         if port is None:
             port = self.find_unused_port()
 
-        args = ["streamlit", "run", "--server.headless=True"]
+        args = ["streamlit", "run"]
+        if IN_COLAB:
+            args.append("--server.headless=True")
         if port is not None:
             args.append(f"--server.port={port}")
         if address is not None:
@@ -221,9 +220,6 @@ class Ragulate(SingletonPerName):  # type: ignore[misc]
                             )
                     else:
                         if "Network URL: " in line:
-                            url = line.split(": ")[1]
-                            url = url.rstrip()
-                            print(f"Dashboard started at {url} .")
                             started.set()
                             Ragulate._dashboard_urls = (
                                 line  # store the url when dashboard is started
