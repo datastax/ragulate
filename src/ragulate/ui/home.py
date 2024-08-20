@@ -12,13 +12,11 @@ asyncio.set_event_loop(asyncio.new_event_loop())
 
 from typing import Dict, List
 
+import state
 import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
 
-
 from ragulate.utils import get_tru
-import state
-
 
 if __name__ == "__main__":
     if "home_cache_time" not in st.session_state:
@@ -28,13 +26,14 @@ if __name__ == "__main__":
     if state.dataset_key() not in st.session_state:
         state.set_page_item(state.dataset_key(), state.get_selected_dataset())
 
-    # restore recipe selector state
+        # restore recipe selector state
         for selected_recipe in state.get_selected_recipes():
             state.set_page_item(state.recipe_key(selected_recipe), True)
 
+
 @st.cache_data
 def get_datasets_and_recipes(timestamp: int) -> Dict[str, List[str]]:
-    dataset_to_recipe_map = {"<none>": []}
+    dataset_to_recipe_map: Dict[str, List[str]] = {"<none>": []}
 
     for file in glob.glob(os.path.join("*.sqlite")):
         tru = get_tru(recipe_name=file)
@@ -49,6 +48,7 @@ def get_datasets_and_recipes(timestamp: int) -> Dict[str, List[str]]:
 
     return dataset_to_recipe_map
 
+
 def home() -> None:
     """Render the home page."""
 
@@ -62,7 +62,7 @@ def home() -> None:
         selected_dataset = state.get_selected_dataset()
         options = dataset_to_recipe_map.keys()
 
-        dataset = st.radio(label="Dataset:", options=options, key = state.dataset_key())
+        dataset = st.radio(label="Dataset:", options=options, key=state.dataset_key())
         if dataset is not None and dataset != selected_dataset:
             state.set_selected_dataset(dataset=dataset)
             state.clear_selected_recipes()
@@ -71,14 +71,15 @@ def home() -> None:
     with col2:
         st.write("Recipes:")
         if selected_dataset is not None:
-            for recipe in dataset_to_recipe_map[dataset]:
-                value = st.checkbox(label=recipe, key = state.recipe_key(recipe=recipe))
+            for recipe in dataset_to_recipe_map[selected_dataset]:
+                value = st.checkbox(label=recipe, key=state.recipe_key(recipe=recipe))
                 state.set_recipe_state(recipe=recipe, value=value)
 
     selected_recipes = state.get_selected_recipes()
 
     if st.button("Compare", key="button_compare", disabled=len(selected_recipes) < 2):
         switch_page("compare")
+
 
 if __name__ == "__main__":
     home()
