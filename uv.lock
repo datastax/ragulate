@@ -1046,7 +1046,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-legacy"
-version = "0.9.48"
+version = "0.9.48.post3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1068,9 +1068,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "typing-inspect" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0f/c8/d0c596eba5e55224bc95354ba37bf00d20230ff877a2f4bf05d10de63405/llama_index_legacy-0.9.48.tar.gz", hash = "sha256:82ddc4691edbf49533d65582c249ba22c03fe96fbd3e92f7758dccef28e43834", size = 1560524 }
+sdist = { url = "https://files.pythonhosted.org/packages/35/93/b07dbbee6d1e57dc389d8e66e549dad9205cf569cf7f78fa8ef839598711/llama_index_legacy-0.9.48.post3.tar.gz", hash = "sha256:f6969f1085efb0abebd6367e46f3512020f3f6b9c086f458a519830dd61e8206", size = 781593 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/02/0a/0da9d27b0c3b074c1be1151ff4a4558f077c93df463310adfb47d193dde2/llama_index_legacy-0.9.48-py3-none-any.whl", hash = "sha256:714ada95beac179b4acefa4d2deff74bb7b2f22b0f699ac247d4cb67738d16d4", size = 1981623 },
+    { url = "https://files.pythonhosted.org/packages/84/40/f8e42a3c569031f888c46bcdf12b79736d8728c77c4290ed348feaba79ea/llama_index_legacy-0.9.48.post3-py3-none-any.whl", hash = "sha256:04221320d84d96ba9ee3e21e5055bd8527cbd769e8f1c60cf0368ed907e012a2", size = 1200711 },
 ]
 
 [[package]]
@@ -2144,10 +2144,10 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "seaborn" },
-    { name = "setuptools" },
     { name = "tqdm" },
     { name = "trulens-eval" },
     { name = "typing-extensions" },
+    { name = "watchdog" },
 ]
 
 [package.dev-dependencies]
@@ -2372,15 +2372,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/86/59/a451d7420a77ab0b98f7affa3a1d78a313d2f7281a57afb1a34bae8ab412/seaborn-0.13.2.tar.gz", hash = "sha256:93e60a40988f4d65e9f4885df477e2fdaff6b73a9ded434c1ab356dd57eefff7", size = 1457696 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/83/11/00d3c3dfc25ad54e731d91449895a79e4bf2384dc3ac01809010ba88f6d5/seaborn-0.13.2-py3-none-any.whl", hash = "sha256:636f8336facf092165e27924f223d3c62ca560b1f2bb5dff7ab7fad265361987", size = 294914 },
-]
-
-[[package]]
-name = "setuptools"
-version = "72.2.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/ce/ef/013ded5b0d259f3fa636bf35de186f0061c09fbe124020ce6b8db68c83af/setuptools-72.2.0.tar.gz", hash = "sha256:80aacbf633704e9c8bfa1d99fa5dd4dc59573efcf9e4042c13d3bcef91ac2ef9", size = 2419230 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/6e/ec/06715d912351edc453e37f93f3fc80dcffd5ca0e70386c87529aca296f05/setuptools-72.2.0-py3-none-any.whl", hash = "sha256:f11dd94b7bae3a156a95ec151f24e4637fb4fa19c878e4d191bfb8b2d82728c4", size = 2336658 },
 ]
 
 [[package]]
@@ -2880,11 +2871,11 @@ wheels = [
 
 [[package]]
 name = "typing-extensions"
-version = "4.10.0"
+version = "4.12.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/16/3a/0d26ce356c7465a19c9ea8814b960f8a36c3b0d07c323176620b7b483e44/typing_extensions-4.10.0.tar.gz", hash = "sha256:b0abd7c89e8fb96f98db18d86106ff1d90ab692004eb746cf6eda2682f91b3cb", size = 77558 }
+sdist = { url = "https://files.pythonhosted.org/packages/df/db/f35a00659bc03fec321ba8bce9420de607a1d37f8342eee1863174c69557/typing_extensions-4.12.2.tar.gz", hash = "sha256:1a7ead55c7e559dd4dee8856e3a88b41225abfe1ce8df57b7c13915fe121ffb8", size = 85321 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f9/de/dc04a3ea60b22624b51c703a84bbe0184abcd1d0b9bc8074b5d6b7ab90bb/typing_extensions-4.10.0-py3-none-any.whl", hash = "sha256:69b1a937c3a517342112fb4c6df7e72fc39a38e7891a5730ed4985b5214b5475", size = 33926 },
+    { url = "https://files.pythonhosted.org/packages/26/9f/ad63fc0248c5379346306f8668cda6e2e2e9c95e01216d2b8ffd9ff037d0/typing_extensions-4.12.2-py3-none-any.whl", hash = "sha256:04e5ca0351e0f3f85c6853954072df659d0d13fac324d0072316b67d7794700d", size = 37438 },
 ]
 
 [[package]]
