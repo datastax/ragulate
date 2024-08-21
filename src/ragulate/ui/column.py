@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional
 
+
 class Column:
     field: str | None
     children: Dict[str, "Column"]

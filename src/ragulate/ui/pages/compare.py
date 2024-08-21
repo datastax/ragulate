@@ -16,23 +16,19 @@ asyncio.set_event_loop(asyncio.new_event_loop())
 import pandas as pd
 import streamlit as st
 from ragulate.ui import state
+from ragulate.ui.column import Column, get_column_defs
+from ragulate.ui.data import combine_and_calculate_diff
 from ragulate.utils import get_tru
 from st_aggrid import AgGrid
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 from st_aggrid.shared import GridUpdateMode
 from streamlit_extras.switch_page_button import switch_page
 
-from ragulate.ui.column import Column, get_column_defs
-from ragulate.ui.data import combine_and_calculate_diff
-
 PAGINATION_SIZE = 10
 
-st.set_page_config(
-    page_title="Ragulate - Compare", layout="wide"
-)
+st.set_page_config(page_title="Ragulate - Compare", layout="wide")
 
 numericColumnType = ["numericColumn", "numberColumnFilter"]
-
 
 
 @st.cache_data
@@ -118,7 +114,6 @@ else:
             gridOptions=gridOptions,
             update_mode=GridUpdateMode.SELECTION_CHANGED,
             allow_unsafe_jscode=True,
-
         )
 
         selected_rows = data.selected_rows

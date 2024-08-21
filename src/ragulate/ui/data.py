@@ -1,8 +1,9 @@
-from typing import Any, Dict, List, Optional, Tuple
 import json
+from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 from pandas import Index
+
 
 def split_into_dict(text: str, keys: List[str]) -> Dict[str, str]:
     # Create a dictionary to hold the results
@@ -114,6 +115,7 @@ def extract_groundedness_reasons(
     except (IndexError, TypeError):
         return None
 
+
 def find_common_strings(list_of_lists: List[List[str]]) -> List[str]:
     # Convert each list to a set
     sets = [set(lst) for lst in list_of_lists]
@@ -134,6 +136,7 @@ def find_full_set_of_strings(list_of_lists: List[List[str]]) -> List[str]:
 
     # Convert the set back to a list (if needed)
     return list(full_set_of_strings)
+
 
 def combine_and_calculate_diff(
     df_list: List[pd.DataFrame], feedbacks_list: List[List[str]], recipes: List[str]
