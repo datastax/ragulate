@@ -27,8 +27,8 @@ DASHBOARD_START_TIMEOUT: Annotated[
 ] = 30
 
 
-class Ragulate(SingletonPerName):  # type: ignore[misc]
-    """Ragulate is the main class that provides an entry points to ragulate."""
+class Launcher(SingletonPerName):  # type: ignore[misc]
+    """Launcher is the main class that provides an entry points launching the UI."""
 
     _dashboard_urls: Optional[str] = None
 
@@ -119,11 +119,11 @@ class Ragulate(SingletonPerName):  # type: ignore[misc]
 
         # run home with subprocess
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        home_path = os.path.join(current_dir, "pages", "home.py")
+        home_path = os.path.join(current_dir, "home.py")
 
-        if Ragulate._dashboard_proc is not None:
-            print("Dashboard already running at path:", Ragulate._dashboard_urls)
-            return Ragulate._dashboard_proc
+        if Launcher._dashboard_proc is not None:
+            print("Dashboard already running at path:", Launcher._dashboard_urls)
+            return Launcher._dashboard_proc
 
         env = None
         if _dev is not None:
@@ -133,7 +133,7 @@ class Ragulate(SingletonPerName):  # type: ignore[misc]
         if port is None:
             port = self.find_unused_port()
 
-        args = ["streamlit", "run"]
+        args = ["streamlit", "run", "--client.showSidebarNavigation=False"]
         if IN_COLAB:
             args.append("--server.headless=True")
         if port is not None:
@@ -181,18 +181,18 @@ class Ragulate(SingletonPerName):  # type: ignore[misc]
                         else:
                             print(line)
 
-            Ragulate.tunnel_listener_stdout = Thread(
+            Launcher.tunnel_listener_stdout = Thread(
                 target=listen_to_tunnel,
                 args=(tunnel_proc, tunnel_proc.stdout, out_stdout, tunnel_started),
             )
-            Ragulate.tunnel_listener_stderr = Thread(
+            Launcher.tunnel_listener_stderr = Thread(
                 target=listen_to_tunnel,
                 args=(tunnel_proc, tunnel_proc.stderr, out_stderr, tunnel_started),
             )
-            Ragulate.tunnel_listener_stdout.daemon = True
-            Ragulate.tunnel_listener_stderr.daemon = True
-            Ragulate.tunnel_listener_stdout.start()
-            Ragulate.tunnel_listener_stderr.start()
+            Launcher.tunnel_listener_stdout.daemon = True
+            Launcher.tunnel_listener_stderr.daemon = True
+            Launcher.tunnel_listener_stdout.start()
+            Launcher.tunnel_listener_stderr.start()
             if not tunnel_started.wait(
                 timeout=DASHBOARD_START_TIMEOUT
             ):  # This might not work on windows.
@@ -215,13 +215,13 @@ class Ragulate(SingletonPerName):  # type: ignore[misc]
                                 out.append_stdout(line)
                             else:
                                 print(line)
-                            Ragulate._dashboard_urls = (
+                            Launcher._dashboard_urls = (
                                 line  # store the url when dashboard is started
                             )
                     else:
                         if "Network URL: " in line:
                             started.set()
-                            Ragulate._dashboard_urls = (
+                            Launcher._dashboard_urls = (
                                 line  # store the url when dashboard is started
                             )
                         if out is not None:
@@ -233,21 +233,21 @@ class Ragulate(SingletonPerName):  # type: ignore[misc]
             else:
                 print("Dashboard closed.")
 
-        Ragulate.dashboard_listener_stdout = Thread(
+        Launcher.dashboard_listener_stdout = Thread(
             target=listen_to_dashboard, args=(proc, proc.stdout, out_stdout, started)
         )
-        Ragulate.dashboard_listener_stderr = Thread(
+        Launcher.dashboard_listener_stderr = Thread(
             target=listen_to_dashboard, args=(proc, proc.stderr, out_stderr, started)
         )
 
         # Purposely block main process from ending and wait for dashboard.
-        Ragulate.dashboard_listener_stdout.daemon = False
-        Ragulate.dashboard_listener_stderr.daemon = False
+        Launcher.dashboard_listener_stdout.daemon = False
+        Launcher.dashboard_listener_stderr.daemon = False
 
-        Ragulate.dashboard_listener_stdout.start()
-        Ragulate.dashboard_listener_stderr.start()
+        Launcher.dashboard_listener_stdout.start()
+        Launcher.dashboard_listener_stderr.start()
 
-        Ragulate._dashboard_proc = proc
+        Launcher._dashboard_proc = proc
 
         wait_period = DASHBOARD_START_TIMEOUT
         if IN_COLAB:
@@ -256,7 +256,7 @@ class Ragulate(SingletonPerName):  # type: ignore[misc]
 
         # This might not work on windows.
         if not started.wait(timeout=wait_period):
-            Ragulate._dashboard_proc = None
+            Launcher._dashboard_proc = None
             raise RuntimeError(
                 "Dashboard failed to start in time. "
                 "Please inspect dashboard logs for additional information."
@@ -279,7 +279,7 @@ class Ragulate(SingletonPerName):  # type: ignore[misc]
         Raises:
              RuntimeError: Dashboard is not running in the current process. Can be avoided with `force`.
         """
-        if Ragulate._dashboard_proc is None:
+        if Launcher._dashboard_proc is None:
             if not force:
                 raise RuntimeError(
                     "Dashboard not running in this workspace. "
@@ -311,14 +311,14 @@ class Ragulate(SingletonPerName):  # type: ignore[misc]
                         continue
 
         else:
-            Ragulate._dashboard_proc.kill()
-            Ragulate._dashboard_proc = None
+            Launcher._dashboard_proc.kill()
+            Launcher._dashboard_proc = None
 
 
 def main() -> None:
     """Main function for the UI."""
-    ragulate = Ragulate()
-    ragulate.run_dashboard(port=8000)
+    launcher = Launcher()
+    launcher.run_dashboard(port=8000)
 
 
 if __name__ == "__main__":
