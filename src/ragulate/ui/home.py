@@ -36,13 +36,14 @@ def get_datasets_and_recipes(timestamp: int) -> Dict[str, List[str]]:
     dataset_to_recipe_map: Dict[str, List[str]] = {"<none>": []}
 
     for file in glob.glob(os.path.join("*.sqlite")):
-        tru = get_tru(recipe_name=file)
+        recipe_name = file.removesuffix(".sqlite")
+        tru = get_tru(recipe_name=recipe_name)
 
         for app in tru.get_apps():
             dataset = app["app_id"]
             if dataset not in dataset_to_recipe_map:
                 dataset_to_recipe_map[dataset] = []
-            dataset_to_recipe_map[dataset].append(file)
+            dataset_to_recipe_map[dataset].append(recipe_name)
 
         tru.delete_singleton()
 

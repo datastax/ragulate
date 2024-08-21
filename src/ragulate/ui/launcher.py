@@ -133,7 +133,7 @@ class Launcher(SingletonPerName):  # type: ignore[misc]
         if port is None:
             port = self.find_unused_port()
 
-        args = ["streamlit", "run"]
+        args = ["streamlit", "run", "--client.showSidebarNavigation=False"]
         if IN_COLAB:
             args.append("--server.headless=True")
         if port is not None:
