@@ -3,8 +3,11 @@ from __future__ import annotations
 
 import random
 import signal
+import sys
 import time
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, List
+
+sys.modules["pip._vendor.typing_extensions"] = sys.modules["typing_extensions"]
 
 from tqdm import tqdm
 from trulens_eval import Tru, TruChain
@@ -50,6 +53,25 @@ class QueryPipeline(BasePipeline):
     def get_reserved_params(self) -> list[str]:
         return []
 
+    def _sample_queries(self, query_items: List[QueryItem]) -> List[QueryItem]:
+        if self.sample_percent <= 0 or self.sample_percent >= 1.0:
+            return query_items
+
+        random.seed(self.random_seed)
+        indexes = range(len(query_items))
+        subset_size = int(self.sample_percent * len(query_items))
+        sampled_indices = random.sample(population=indexes, k=subset_size)
+        return [query_items[i] for i in sampled_indices]
+
+    def _filter_completed_queries(
+        self, query_items: List[QueryItem], existing_queries: List[str]
+    ) -> List[QueryItem]:
+        return [
+            query_item
+            for query_item in query_items
+            if f'"{query_item.query}"' not in existing_queries
+        ]
+
     def __init__(
         self,
         recipe_name: str,
@@ -89,39 +111,29 @@ class QueryPipeline(BasePipeline):
             # database.
             self._tru.reset_database()
 
-        total_existing_queries = 0
+        self._finished_queries = 0
         for dataset in datasets:
             query_items = dataset.get_query_items()
-            if self.sample_percent < 1.0:
-                if self.random_seed is not None:
-                    random.seed(self.random_seed)
-                sampled_indices = random.sample(
-                    range(len(query_items)), int(self.sample_percent * len(query_items))
-                )
-                query_items = [query_items[i] for i in sampled_indices]
+            query_items = self._sample_queries(query_items=query_items)
 
             # Check for existing records and filter queries
-            existing_records, _feedbacks = self._tru.get_records_and_feedback(
+            existing_records, _ = self._tru.get_records_and_feedback(
                 app_ids=[dataset.name]
             )
-            existing_queries = existing_records["input"].dropna().tolist()
-            total_existing_queries += len(existing_queries)
+            existing_queries = existing_records["input"].tolist()
 
-            query_items = [
-                query_item
-                for query_item in query_items
-                if query_item.query not in existing_queries
-            ]
+            remaining_queries = self._filter_completed_queries(
+                query_items=query_items, existing_queries=existing_queries
+            )
 
-            self._query_items[dataset.name] = query_items
+            self._query_items[dataset.name] = remaining_queries
             self._golden_sets[dataset.name] = dataset.get_golden_set()
-            self._total_queries += len(self._query_items[dataset.name])
+
+            self._total_queries += len(query_items)
+            self._finished_queries += len(query_items) - len(remaining_queries)
 
         metric_count = 4
         self._total_feedbacks = self._total_queries * metric_count
-
-        # Set finished queries count to total existing queries
-        self._finished_queries = total_existing_queries
 
     def signal_handler(self, _: Any, __: Any) -> None:
         """Handle SIGINT signal."""
@@ -141,7 +153,7 @@ class QueryPipeline(BasePipeline):
             )
 
             # Export to JSON
-            records.to_json(f"{self._name}_{dataset_name}_results.json")
+            records.to_json(f"{self.recipe_name}_{dataset_name}_results.json")
 
     def stop_evaluation(self, loc: str) -> None:
         """Stop evaluation."""
