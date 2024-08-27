@@ -5,7 +5,7 @@ import inspect
 import logging
 import sys
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -80,17 +80,21 @@ class BasePipeline(ABC):
 
     def __init__(
         self,
-        recipe_name: str,
         script_path: str,
         method_name: str,
         ingredients: dict[str, Any],
         datasets: list[BaseDataset],
+        recipe_name: Optional[str] = None,
     ):
-        self.recipe_name = recipe_name
         self.script_path = script_path
         self.method_name = method_name
         self._passed_ingredients = ingredients
         self.datasets = datasets
+
+        if recipe_name is None:
+            self.recipe_name = "_".join([f"{k}_{v}" for k, v in ingredients.items()])
+        else:
+            self.recipe_name = recipe_name
 
         try:
             self._method = get_method(
