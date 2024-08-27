@@ -2137,6 +2137,7 @@ dependencies = [
     { name = "kaleido" },
     { name = "llama-index" },
     { name = "llama-index-core" },
+    { name = "nltk" },
     { name = "numpy" },
     { name = "pandas" },
     { name = "plotly" },

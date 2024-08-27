@@ -25,6 +25,7 @@ dependencies = [
     "typing-extensions==4.12.2",
     "llama-index==0.10.31",
     "watchdog>=4.0.2",
+    "nltk==3.8.1",
 ]
 
 [build-system]

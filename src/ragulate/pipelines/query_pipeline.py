@@ -5,7 +5,7 @@ import random
 import signal
 import sys
 import time
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 sys.modules["pip._vendor.typing_extensions"] = sys.modules["typing_extensions"]
 
@@ -74,11 +74,11 @@ class QueryPipeline(BasePipeline):
 
     def __init__(
         self,
-        recipe_name: str,
         script_path: str,
         method_name: str,
         ingredients: dict[str, Any],
         datasets: list[BaseDataset],
+        recipe_name: Optional[str] = None,
         sample_percent: float = 1.0,
         random_seed: int | None = None,
         restart_pipeline: bool = False,
@@ -88,11 +88,11 @@ class QueryPipeline(BasePipeline):
         self._query_items = {}
         self._golden_sets = {}
         super().__init__(
-            recipe_name=recipe_name,
             script_path=script_path,
             method_name=method_name,
             ingredients=ingredients,
             datasets=datasets,
+            recipe_name=recipe_name,
         )
 
         self.sample_percent = sample_percent
@@ -245,11 +245,22 @@ class QueryPipeline(BasePipeline):
                 feedbacks.groundedness(),
             ]
 
+            metadata: Dict[str, Any] = {
+                "script_path": self.script_path,
+                "method_name": self.method_name,
+                "recipe_name": self.recipe_name,
+                "ingredients": self.ingredients,
+                "dataset_name": dataset_name,
+                "llm_provider": self.llm_provider,
+                "model_name": self.model_name,
+            }
+
             recorder = TruChain(
                 pipeline,
                 app_id=dataset_name,
                 feedbacks=feedback_functions,
                 feedback_mode=FeedbackMode.DEFERRED,
+                metadata=metadata,
             )
 
             for query_item in self._query_items[dataset_name]:

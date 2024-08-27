@@ -5,7 +5,7 @@ from ragulate.pipelines import QueryPipeline
 from trulens_eval import TruBasicApp
 
 
-def test_pipeline() -> None:
+def demo_pipeline(param1: str, param2: str) -> None:
     pass
 
 
@@ -16,8 +16,8 @@ class TestQueryPipeline:
         query_pipeline = QueryPipeline(
             recipe_name=":memory:",  # use in-memory database
             script_path=__file__,
-            method_name="test_pipeline",
-            ingredients={},
+            method_name="demo_pipeline",
+            ingredients={"param1": "value1", "param2": "value2"},
             datasets=[self.test_dataset],
         )
 
@@ -31,8 +31,8 @@ class TestQueryPipeline:
         query_pipeline = QueryPipeline(
             recipe_name=":memory:",  # use in-memory database
             script_path=__file__,
-            method_name="test_pipeline",
-            ingredients={},
+            method_name="demo_pipeline",
+            ingredients={"param1": "value1", "param2": "value2"},
             datasets=[self.test_dataset],
             sample_percent=0.5,
         )
@@ -50,8 +50,8 @@ class TestQueryPipeline:
         setup_pipeline = QueryPipeline(
             recipe_name="test_recipe",
             script_path=__file__,
-            method_name="test_pipeline",
-            ingredients={},
+            method_name="demo_pipeline",
+            ingredients={"param1": "value1", "param2": "value2"},
             datasets=[self.test_dataset],
         )
 
@@ -67,8 +67,8 @@ class TestQueryPipeline:
         query_pipeline = QueryPipeline(
             recipe_name="test_recipe",
             script_path=__file__,
-            method_name="test_pipeline",
-            ingredients={},
+            method_name="demo_pipeline",
+            ingredients={"param1": "value1", "param2": "value2"},
             datasets=[self.test_dataset],
         )
 
@@ -77,3 +77,20 @@ class TestQueryPipeline:
         assert query_pipeline._total_feedbacks == 4 * 4
 
         query_pipeline._tru.delete_singleton()
+
+        Path("test_recipe.sqlite").unlink(missing_ok=True)
+
+    def test_recipe_name_generation(self) -> None:
+        # remove db from previous run if exists
+        Path("param1_value1_param2_value2.sqlite").unlink(missing_ok=True)
+
+        query_pipeline = QueryPipeline(
+            script_path=__file__,
+            method_name="demo_pipeline",
+            ingredients={"param1": "value1", "param2": "value2"},
+            datasets=[self.test_dataset],
+        )
+
+        assert query_pipeline.recipe_name == "param1_value1_param2_value2"
+
+        Path("param1_value1_param2_value2.sqlite").unlink(missing_ok=True)
