@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import random
 import signal
-import time
 import sys
+import time
 from typing import TYPE_CHECKING, Any, List
 
 sys.modules["pip._vendor.typing_extensions"] = sys.modules["typing_extensions"]
@@ -63,11 +63,13 @@ class QueryPipeline(BasePipeline):
         sampled_indices = random.sample(population=indexes, k=subset_size)
         return [query_items[i] for i in sampled_indices]
 
-    def _filter_completed_queries(self, query_items: List[QueryItem], existing_queries: List[str]) -> List[QueryItem]:
+    def _filter_completed_queries(
+        self, query_items: List[QueryItem], existing_queries: List[str]
+    ) -> List[QueryItem]:
         return [
             query_item
             for query_item in query_items
-            if f"\"{query_item.query}\"" not in existing_queries
+            if f'"{query_item.query}"' not in existing_queries
         ]
 
     def __init__(
@@ -120,13 +122,15 @@ class QueryPipeline(BasePipeline):
             )
             existing_queries = existing_records["input"].tolist()
 
-            remaining_queries = self._filter_completed_queries(query_items=query_items, existing_queries=existing_queries)
+            remaining_queries = self._filter_completed_queries(
+                query_items=query_items, existing_queries=existing_queries
+            )
 
             self._query_items[dataset.name] = remaining_queries
             self._golden_sets[dataset.name] = dataset.get_golden_set()
 
             self._total_queries += len(query_items)
-            self._finished_queries += (len(query_items) - len(remaining_queries))
+            self._finished_queries += len(query_items) - len(remaining_queries)
 
         metric_count = 4
         self._total_feedbacks = self._total_queries * metric_count

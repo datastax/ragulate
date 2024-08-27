@@ -19,8 +19,8 @@ class TestDataset(BaseDataset):
             QueryItem("Query 4", metadata={}),
         ]
         self._golden_set = [
-            { "query": "Query 1", "response": "Response 1"},
-            { "query": "Query 2", "response": "Response 2"},
-            { "query": "Query 3", "response": "Response 3"},
-            { "query": "Query 4", "response": "Response 4"},
+            {"query": "Query 1", "response": "Response 1"},
+            {"query": "Query 2", "response": "Response 2"},
+            {"query": "Query 3", "response": "Response 3"},
+            {"query": "Query 4", "response": "Response 4"},
         ]

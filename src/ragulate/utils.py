@@ -10,7 +10,11 @@ def get_tru(recipe_name: str) -> Tru:
     """Return Tru for given recipe name."""
     Tru.RETRY_FAILED_SECONDS = 60
     Tru.RETRY_RUNNING_SECONDS = 30
-    database_url = ":memory:" if recipe_name == ":memory:" else f"{recipe_name.removesuffix(".sqlite")}.sqlite"
+    database_url = (
+        ":memory:"
+        if recipe_name == ":memory:"
+        else f"{recipe_name.removesuffix(".sqlite")}.sqlite"
+    )
     return Tru(
         database_url=f"sqlite:///{database_url}",
         database_redact_keys=True,
