@@ -1,9 +1,13 @@
 import json
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import pandas as pd
 from pandas import Index
 
+from ragulate.utils import get_tru
+
+DataFrameList = List[pd.DataFrame]
+FeedbacksList = List[List[str]]
 
 def split_into_dict(text: str, keys: List[str]) -> Dict[str, str]:
     # Create a dictionary to hold the results
@@ -60,6 +64,10 @@ def extract_contexts(record_json: str) -> List[Any]:
             context: List[Any] = returns["context"]
             return context
     return []
+
+def extract_metadata(record_json: str) -> Dict[str,Any]:
+    record = json.loads(record_json)
+    return record.get("meta", [])
 
 
 def extract_answer_relevance_reason(
@@ -137,12 +145,24 @@ def find_full_set_of_strings(list_of_lists: List[List[str]]) -> List[str]:
     # Convert the set back to a list (if needed)
     return list(full_set_of_strings)
 
+def get_dfs_and_feedbacks(recipes: List[str], dataset: str) -> Tuple[DataFrameList, FeedbacksList]:
+    df_list: DataFrameList = []
+    feedbacks_list: FeedbacksList = []
+    for recipe in recipes:
+        tru = get_tru(recipe_name=recipe)
+        df, feedbacks = tru.get_records_and_feedback(app_ids=[dataset])
+        df_list.append(df)
+        feedbacks_list.append(feedbacks)
+        tru.delete_singleton()
+    return df_list, feedbacks_list
 
-def combine_and_calculate_diff(
-    df_list: List[pd.DataFrame], feedbacks_list: List[List[str]], recipes: List[str]
+def filter_by_metadata(df: pd.DataFrame, filter_dict: Dict[str, Any]) -> pd.DataFrame:
+    return df[df['metadata'].apply(lambda x: isinstance(x, dict) and all(x.get(k) == v for k, v in filter_dict.items()))]
+
+def get_compare_data(
+    recipes: List[str], dataset: str, metadata_filter: Dict[str, Any]
 ) -> Tuple[pd.DataFrame, List[str]]:
-    # Ensure the lengths of df_list and recipes match
-    assert len(df_list) == len(recipes), "Number of dataframes and recipes must match."
+    df_list, feedbacks_list = get_dfs_and_feedbacks(recipes=recipes, dataset=dataset)
 
     feedbacks = find_common_strings(feedbacks_list)
 
@@ -176,6 +196,7 @@ def combine_and_calculate_diff(
             df["ground_truth"] = df["answer_correctness_calls"].apply(
                 extract_ground_truth
             )
+            df["metadata"] = df["record_json"].apply(extract_metadata)
         df["answer_relevance_reason"] = df["answer_relevance_calls"].apply(
             extract_answer_relevance_reason
         )
@@ -186,10 +207,11 @@ def combine_and_calculate_diff(
             extract_groundedness_reasons
         )
         df["contexts"] = df["record_json"].apply(extract_contexts)
+
         df.drop(columns=columns_to_drop, inplace=True)
         df.columns = Index(
             [
-                f"{col}_{recipe}" if col not in ["input", "ground_truth"] else col
+                f"{col}_{recipe}" if col not in ["input", "ground_truth", "metadata"] else col
                 for col in df.columns
             ]
         )
@@ -197,6 +219,8 @@ def combine_and_calculate_diff(
     combined_df = df_list[0]
     for df in df_list[1:]:
         combined_df = combined_df.merge(df, on="input", how="outer")
+
+    combined_df = filter_by_metadata(df=combined_df, filter_dict=metadata_filter)
 
     # If there are exactly two dataframes, calculate the differences
     if len(df_list) == 2:
@@ -220,3 +244,58 @@ def combine_and_calculate_diff(
     ]
 
     return (combined_df, columns_to_diff)
+
+def get_chart_data(
+    recipes: List[str], dataset: str, metadata_filter: Dict[str, Any]
+) -> Tuple[pd.DataFrame, List[str]]:
+    df_list, feedbacks_list = get_dfs_and_feedbacks(recipes=recipes, dataset=dataset)
+
+    feedbacks = find_common_strings(feedbacks_list)
+
+    columns_to_keep = [
+        *feedbacks,
+        "record_id",
+        "latency",
+        "total_tokens",
+        "total_cost",
+    ]
+
+    df_all = pd.DataFrame()
+
+    for df, recipe in zip(df_list, recipes):
+        columns_to_drop = [
+            col for col in df.columns if col not in columns_to_keep
+        ]
+
+        df["metadata"] = df["record_json"].apply(extract_metadata)
+        df = filter_by_metadata(df=df, filter_dict=metadata_filter)
+
+        df = df.drop(columns=columns_to_drop)
+        df["recipe"] = recipe
+        df["dataset"] = dataset
+
+        # set negative values to None
+        for feedback in feedbacks:
+            df.loc[df[feedback] < 0, feedback] = None
+
+        df_all = pd.concat([df_all, df], axis=0, ignore_index=True)
+
+    reset_df = df_all.reset_index(drop=True)
+
+    return reset_df, sorted(list(set(feedbacks)))
+
+def get_metadata_options(recipes: List[str], dataset: str) -> Dict[str, Set[Any]]:
+    metadata_options: Dict[str, Set[Any]] = {}
+    df_list, _ = get_dfs_and_feedbacks(recipes=recipes, dataset=dataset)
+
+    for df in df_list:
+        for json_record in df["record_json"]:
+            metadata = extract_metadata(json_record)
+            for key, value in metadata.items():
+                if key not in metadata_options:
+                    metadata_options[key] = {value}
+                else:
+                    metadata_options[key].add(value)
+
+    return metadata_options
+

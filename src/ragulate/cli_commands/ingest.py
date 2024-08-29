@@ -15,7 +15,7 @@ def setup_ingest(subparsers) -> None:  # type: ignore[no-untyped-def]
         "--name",
         type=str,
         help="A unique name for the ingest pipeline",
-        required=True,
+        required=False,
     )
     ingest_parser.add_argument(
         "-s",

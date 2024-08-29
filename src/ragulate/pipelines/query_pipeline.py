@@ -167,7 +167,7 @@ class QueryPipeline(BasePipeline):
                 logger.exception("issue stopping evaluator")
             finally:
                 self._progress.close()
-                self.export_results()
+                # self.export_results()
 
     def update_progress(self, query_change: int = 0) -> None:
         """Update progress bar."""

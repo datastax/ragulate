@@ -1,4 +1,4 @@
-from typing import Any, Set
+from typing import Any, Dict, List, Set
 
 import streamlit as st
 
@@ -26,6 +26,21 @@ def clear_selected_recipes() -> None:
     st.session_state["selected_recipes"] = set()
 
 
+def get_metadata_filter() -> Dict[str, Any]:
+    if "metadata_filter" not in st.session_state:
+        st.session_state["metadata_filter"] = {}
+    metadata_filter: Dict[str, Any] = st.session_state["metadata_filter"]
+    return metadata_filter
+
+
+def set_metadata_filter(filter: Dict[str, Any]) -> None:
+    st.session_state["metadata_filter"] = filter
+
+
+def clear_selected_recipes() -> None:
+    st.session_state["selected_recipes"] = set()
+
+
 def get_selected_recipes() -> Set[str]:
     if "selected_recipes" not in st.session_state:
         clear_selected_recipes()
@@ -46,3 +61,20 @@ def set_recipe_state(recipe: str, value: bool) -> None:
 
 def set_page_item(key: str, value: Any) -> None:
     st.session_state[key] = value
+
+def set_page_item_if_empty(key: str, value: Any) -> None:
+    if key not in st.session_state:
+        st.session_state[key] = value
+
+def get_page_item(key: str) -> Any | None:
+    return st.session_state.get(key=key)
+
+def set_page_loaded(page: str) -> None:
+    st.session_state[f"page_{page}"] = True
+
+def get_page_loaded(page: str) -> bool:
+    st.session_state.get(f"page_{page}", False)
+
+def clear_page_loaded(page: str) -> None:
+    if f"page_{page}" in st.session_state:
+        del st.session_state[f"page_{page}"]

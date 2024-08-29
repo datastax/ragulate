@@ -1,7 +1,7 @@
 import asyncio
 import json
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Set, Tuple
 
 import pandas as pd
 from pandas import Index
@@ -17,14 +17,15 @@ import pandas as pd
 import streamlit as st
 from ragulate.ui import state
 from ragulate.ui.column import Column, get_column_defs
-from ragulate.ui.data import combine_and_calculate_diff
-from ragulate.utils import get_tru
+from ragulate.ui.data import get_compare_data, get_metadata_options
+
 from st_aggrid import AgGrid
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 from st_aggrid.shared import GridUpdateMode
 from streamlit_extras.switch_page_button import switch_page
 
 PAGINATION_SIZE = 10
+SELECT_ALL_TEXT = "<all>"
 
 st.set_page_config(page_title="Ragulate - Compare", layout="wide")
 
@@ -33,42 +34,38 @@ numericColumnType = ["numericColumn", "numberColumnFilter"]
 
 @st.cache_data
 def get_data(
-    recipes: List[str], dataset: str, timestamp: int
+    recipes: List[str], dataset: str, filter: Dict[str, Any], timestamp: int
 ) -> Tuple[pd.DataFrame, List[str]]:
-    df_list: List[pd.DataFrame] = []
-    feedbacks_list: List[List[str]] = []
-    for recipe in recipes:
-        tru = get_tru(recipe_name=recipe)
-        df, feedbacks = tru.get_records_and_feedback(app_ids=[dataset])
-        df_list.append(df)
-        feedbacks_list.append(feedbacks)
-        tru.delete_singleton()
+    return get_compare_data(recipes=recipes, dataset=dataset, metadata_filter=filter)
 
-    return combine_and_calculate_diff(
-        df_list=df_list, feedbacks_list=feedbacks_list, recipes=recipes
-    )
-
-
-if st.button("home"):
+col1, col2 = st.columns(2)
+if col1.button("home"):
     switch_page("home")
+
+if col2.button("filter"):
+    switch_page("filter")
 
 recipes = list(state.get_selected_recipes())
 dataset = state.get_selected_dataset()
+
 if dataset is None or len(recipes) < 2:
     switch_page("home")
 else:
-    compare_df, data_cols = get_data(recipes=recipes, dataset=dataset, timestamp=0)
+    filter = state.get_metadata_filter()
+    compare_df, data_cols = get_data(recipes=recipes, dataset=dataset, filter=filter, timestamp=0)
 
     columns: Dict[str, Column] = {}
 
     columns["Query"] = Column(field="input", style={"word-break": "break-word"})
     columns["Answer"] = Column()
+    columns["Metadata"] = Column(field=f"metadata", hide=True)
 
     for recipe in recipes:
         columns["Answer"].children[recipe] = Column(
             field=f"output_{recipe}", width=400, style={"word-break": "break-word"}
         )
         columns[f"contexts_{recipe}"] = Column(field=f"contexts_{recipe}", hide=True)
+
         columns[f"answer_relevance_reason_{recipe}"] = Column(
             field=f"answer_relevance_reason_{recipe}", hide=True
         )
@@ -127,9 +124,14 @@ else:
         st.divider()
 
         st.subheader(f"Query")
-        st.caption(selected_rows["input"][0])
+        st.write(selected_rows["input"][0])
+
+        st.caption("metadata:")
+        metadata = selected_rows[f"metadata"][0]
+        st.json(metadata)
+
         st.subheader(f"Ground Truth")
-        st.caption(selected_rows["ground_truth"][0])
+        st.write(selected_rows["ground_truth"][0])
 
         table = {}
         for recipe in recipes:

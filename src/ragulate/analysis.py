@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Dict
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -79,7 +79,7 @@ class Analysis:
                     }
         return stats
 
-    def output_box_plots_by_dataset(self, df: pd.DataFrame, metrics: list[str]) -> None:
+    def box_plots_by_dataset(self, df: pd.DataFrame, metrics: list[str]) -> Dict[str, go.Figure]:
         """Output box plots by dataset."""
         stats = self.calculate_statistics(df, metrics)
         recipes = sorted(df["recipe"].unique(), key=lambda x: x.lower())
@@ -95,6 +95,8 @@ class Analysis:
         ]
 
         height = max((len(metrics) * len(recipes) * 20) + 150, 450)
+
+        figures: Dict[str, go.Figure] = {}
 
         for dataset in datasets:
             fig = go.Figure()
@@ -158,18 +160,26 @@ class Analysis:
                     "x": 1,
                 },
             )
+            figures[dataset] = fig
+        return figures
 
+    def output_box_plots_by_dataset(self, df: pd.DataFrame, metrics: list[str]) -> None:
+        figures = self.box_plots_by_dataset(df=df, metrics=metrics)
+
+        for dataset, fig in figures.items():
             write_image(fig, f"./{dataset}_box_plot.png")
 
-    def output_histograms_by_dataset(
+    def histograms_by_dataset(
         self, df: pd.DataFrame, metrics: list[str]
-    ) -> None:
+    ) -> Dict[str, sns.FacetGrid]:
         """Output histograms by dataset."""
         # Append "latency" to the metrics list
         metrics.append("latency")
 
         # Get unique datasets
         datasets = df["dataset"].unique()
+
+        figures: Dict[str, sns.FacetGrid] = {}
 
         for dataset in datasets:
             # Filter DataFrame for the current dataset
@@ -251,11 +261,23 @@ class Analysis:
             # Adjust the layout to make room for the title
             g.figure.subplots_adjust(top=0.9)
 
+            figures[dataset] = g
+
+        return figures
+
+
+    def output_histograms_by_dataset(
+        self, df: pd.DataFrame, metrics: list[str]
+    ) -> None:
+        figures = self.histograms_by_dataset(df=df, metrics=metrics)
+        for dataset, g in figures.items():
             # Save the plot as a PNG file
             g.savefig(f"./{dataset}_histogram_grid.png")
 
             # Close the plot to avoid displaying it
             plt.close()
+
+
 
     def compare(self, recipes: list[str], output: str = "box-plots") -> None:
         """Compare results from 2 (or more) recipes."""
