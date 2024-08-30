@@ -17,8 +17,7 @@ import pandas as pd
 import streamlit as st
 from ragulate.ui import state
 from ragulate.ui.column import Column, get_column_defs
-from ragulate.ui.data import get_compare_data, get_metadata_options
-
+from ragulate.ui.data import get_compare_data, get_detail_data, split_into_dict
 from st_aggrid import AgGrid
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 from st_aggrid.shared import GridUpdateMode
@@ -32,11 +31,12 @@ st.set_page_config(page_title="Ragulate - Compare", layout="wide")
 numericColumnType = ["numericColumn", "numberColumnFilter"]
 
 
-@st.cache_data
+# @st.cache_data
 def get_data(
     recipes: List[str], dataset: str, filter: Dict[str, Any], timestamp: int
 ) -> Tuple[pd.DataFrame, List[str]]:
     return get_compare_data(recipes=recipes, dataset=dataset, metadata_filter=filter)
+
 
 col1, col2 = st.columns(2)
 if col1.button("home"):
@@ -52,7 +52,9 @@ if dataset is None or len(recipes) < 2:
     switch_page("home")
 else:
     filter = state.get_metadata_filter()
-    compare_df, data_cols = get_data(recipes=recipes, dataset=dataset, filter=filter, timestamp=0)
+    compare_df, data_cols = get_data(
+        recipes=recipes, dataset=dataset, filter=filter, timestamp=0
+    )
 
     columns: Dict[str, Column] = {}
 
@@ -63,17 +65,6 @@ else:
     for recipe in recipes:
         columns["Answer"].children[recipe] = Column(
             field=f"output_{recipe}", width=400, style={"word-break": "break-word"}
-        )
-        columns[f"contexts_{recipe}"] = Column(field=f"contexts_{recipe}", hide=True)
-
-        columns[f"answer_relevance_reason_{recipe}"] = Column(
-            field=f"answer_relevance_reason_{recipe}", hide=True
-        )
-        columns[f"context_relevance_reasons_{recipe}"] = Column(
-            field=f"context_relevance_reasons_{recipe}", hide=True
-        )
-        columns[f"groundedness_reasons_{recipe}"] = Column(
-            field=f"groundedness_reasons_{recipe}", hide=True
         )
 
     columns["Answer"].children["Ground Truth"] = Column(
@@ -120,6 +111,12 @@ else:
         st.write("Hint: select a row to display details of a record")
 
     else:
+        record_ids: List[str] = []
+        for recipe in recipes:
+            record_ids.append(selected_rows[f"record_id_{recipe}"][0])
+
+        detail_data = get_detail_data(recipes=recipes, record_ids=record_ids)
+
         # Start the record specific section
         st.divider()
 
@@ -152,7 +149,7 @@ else:
         for i, recipe in enumerate(recipes):
             context_indexes[recipe] = {}
             try:
-                for j, context in enumerate(selected_rows[f"contexts_{recipe}"][0]):
+                for j, context in enumerate(detail_data[recipe]["contexts"]):
                     context_cols[i].caption(f"Chunk: {j + 1}")
                     context_indexes[recipe][context["page_content"]] = j
                     with context_cols[i].popover(
@@ -170,25 +167,33 @@ else:
         with st.expander(f"Answer Relevance"):
             reason_cols = st.columns(len(recipes))
             for i, recipe in enumerate(recipes):
-                reasons = selected_rows[f"answer_relevance_reason_{recipe}"][0]
-                if reasons:
-                    reason_cols[i].json(reasons)
+                calls = detail_data[recipe]["calls"]["answer_relevance"]
+
+                if len(calls) > 0:
+                    call = calls[0]
+                    reason = split_into_dict(
+                        call["reason"], ["Criteria", "Supporting Evidence"]
+                    )
+                    reason["score"] = call["score"]
+
+                    reason_cols[i].json(reason)
 
         with st.expander(f"Context Relevance"):
             reason_cols = st.columns(len(recipes))
             for i, recipe in enumerate(recipes):
                 try:
+                    calls = detail_data[recipe]["calls"]["context_relevance"]
+                    # reason_cols[i].write(calls)
+
                     context_reasons: Dict[int, Dict[str, Any]] = {}
-                    for context_reason in selected_rows[
-                        f"context_relevance_reasons_{recipe}"
-                    ][0]:
-                        context_index = context_indexes[recipe][
-                            context_reason["context"]
-                        ]
-                        context_reasons[context_index] = {
-                            "score": context_reason["score"],
-                            "reason": context_reason["reason"],
-                        }
+
+                    for call in calls:
+                        context_index = context_indexes[recipe][call["context"]]
+                        reason = split_into_dict(
+                            call["reason"], ["Criteria", "Supporting Evidence"]
+                        )
+                        reason["score"] = call["score"]
+                        context_reasons[context_index] = reason
                     reason_cols[i].json(context_reasons)
                 except TypeError:
                     continue
@@ -197,19 +202,14 @@ else:
             reason_cols = st.columns(len(recipes))
             for i, recipe in enumerate(recipes):
                 try:
-                    groundedness_reasons: Dict[str, Any] = {
-                        "contexts": [],
-                        "reasons": [],
-                    }
-                    for context in selected_rows[f"groundedness_reasons_{recipe}"][0][
-                        "contexts"
-                    ]:
-                        groundedness_reasons["contexts"].append(
-                            context_indexes[recipe][context]
-                        )
-                    groundedness_reasons["reasons"] = selected_rows[
-                        f"groundedness_reasons_{recipe}"
-                    ][0]["reasons"].split("\n\n")
-                    reason_cols[i].json(groundedness_reasons)
+                    calls = detail_data[recipe]["calls"]["groundedness"]
+
+                    reasons = []
+                    for call in calls:
+                        del call["reason"]
+                        del call["context"]
+                        reasons.append(call)
+
+                    reason_cols[i].json(reasons)
                 except TypeError:
                     continue

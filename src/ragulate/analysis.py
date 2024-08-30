@@ -79,7 +79,9 @@ class Analysis:
                     }
         return stats
 
-    def box_plots_by_dataset(self, df: pd.DataFrame, metrics: list[str]) -> Dict[str, go.Figure]:
+    def box_plots_by_dataset(
+        self, df: pd.DataFrame, metrics: list[str]
+    ) -> Dict[str, go.Figure]:
         """Output box plots by dataset."""
         stats = self.calculate_statistics(df, metrics)
         recipes = sorted(df["recipe"].unique(), key=lambda x: x.lower())
@@ -265,7 +267,6 @@ class Analysis:
 
         return figures
 
-
     def output_histograms_by_dataset(
         self, df: pd.DataFrame, metrics: list[str]
     ) -> None:
@@ -276,8 +277,6 @@ class Analysis:
 
             # Close the plot to avoid displaying it
             plt.close()
-
-
 
     def compare(self, recipes: list[str], output: str = "box-plots") -> None:
         """Compare results from 2 (or more) recipes."""

@@ -35,6 +35,7 @@ if __name__ == "__main__":
 MetadataMap = Dict[str, Dict[str, Dict[str, Any]]]
 DatasetToRecipeMap = Dict[str, List[str]]
 
+
 @st.cache_data
 def get_datasets_and_recipes(timestamp: int) -> Tuple[DatasetToRecipeMap, MetadataMap]:
     dataset_to_recipe_map: DatasetToRecipeMap = {"<none>": []}
@@ -63,7 +64,9 @@ def home() -> None:
 
     st.write("Select Dataset and at least 2 Recipes to Compare...")
 
-    dataset_to_recipe_map, metadata_map = get_datasets_and_recipes(st.session_state.home_cache_time)
+    dataset_to_recipe_map, metadata_map = get_datasets_and_recipes(
+        st.session_state.home_cache_time
+    )
 
     col1, col2 = st.columns(2)
 
@@ -103,6 +106,7 @@ def home() -> None:
 
     if col3.button("Filter", key="button_filter", disabled=buttons_disabled):
         switch_page("filter")
+
 
 if __name__ == "__main__":
     home()
