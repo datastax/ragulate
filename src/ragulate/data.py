@@ -1,4 +1,6 @@
+import glob
 import json
+import os
 import sqlite3
 import sys
 from collections import defaultdict
@@ -9,6 +11,13 @@ import pandas as pd
 from pandas import Index
 
 from ragulate.datasets import find_dataset
+
+
+def get_all_recipes() -> List[str]:
+    recipes: List[str] = []
+    for file in glob.glob(os.path.join("*.sqlite")):
+        recipes.append(file.removesuffix(".sqlite"))
+    return recipes
 
 
 def print_err(any: Any) -> None:

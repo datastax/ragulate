@@ -8,8 +8,8 @@ sys.modules["pip._vendor.typing_extensions"] = sys.modules["typing_extensions"]
 asyncio.set_event_loop(asyncio.new_event_loop())
 
 import streamlit as st
+from ragulate.data import get_metadata_options
 from ragulate.ui import state
-from ragulate.ui.data import get_metadata_options
 from streamlit_extras.switch_page_button import switch_page
 
 SELECT_ALL_TEXT = "<all>"

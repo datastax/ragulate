@@ -12,8 +12,8 @@ asyncio.set_event_loop(asyncio.new_event_loop())
 import streamlit as st
 from plotly.io import to_html, to_image
 from ragulate.analysis import Analysis
+from ragulate.data import get_chart_data
 from ragulate.ui import state
-from ragulate.ui.data import get_chart_data
 from streamlit_extras.switch_page_button import switch_page
 
 st.set_page_config(page_title="Ragulate - Chart", layout="wide")
@@ -47,7 +47,7 @@ else:
 
     analysis = Analysis()
 
-    figures = analysis.box_plots_by_dataset(df=df, metrics=feedbacks)
+    figures = analysis.box_plots_by_dataset(df=df, feedbacks=feedbacks)
 
     if dataset not in figures:
         st.write("Analysis failed")

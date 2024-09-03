@@ -1,6 +1,4 @@
 import asyncio
-import glob
-import os
 import sys
 
 from typing_extensions import Generic, Protocol
@@ -16,7 +14,7 @@ import state
 import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
 
-from ragulate.ui.data import get_datasets_and_metadata
+from ragulate.data import get_all_recipes, get_datasets_and_metadata
 
 st.set_page_config(page_title="Ragulate - Home", layout="wide")
 
@@ -41,9 +39,7 @@ def get_datasets_and_recipes(timestamp: int) -> Tuple[DatasetToRecipeMap, Metada
     dataset_to_recipe_map: DatasetToRecipeMap = {"<none>": []}
     metadata_map: MetadataMap = {}
 
-    for file in glob.glob(os.path.join("*.sqlite")):
-        recipe = file.removesuffix(".sqlite")
-
+    for recipe in get_all_recipes():
         for dataset, metadata in get_datasets_and_metadata(recipe=recipe).items():
             if dataset not in dataset_to_recipe_map:
                 dataset_to_recipe_map[dataset] = []

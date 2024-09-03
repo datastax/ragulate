@@ -17,9 +17,9 @@ import sys
 
 import pandas as pd
 import streamlit as st
+from ragulate.data import get_compare_data, get_detail_data, split_into_dict
 from ragulate.ui import state
 from ragulate.ui.column import Column, get_column_defs
-from ragulate.ui.data import get_compare_data, get_detail_data, split_into_dict
 from st_aggrid import AgGrid
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 from st_aggrid.shared import GridUpdateMode
