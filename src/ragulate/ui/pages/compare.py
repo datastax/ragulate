@@ -1,4 +1,3 @@
-import asyncio
 import json
 import sys
 from typing import Any, Dict, List, Set, Tuple
@@ -8,9 +7,6 @@ from pandas import Index
 from typing_extensions import Generic, Protocol
 
 sys.modules["pip._vendor.typing_extensions"] = sys.modules["typing_extensions"]
-
-# https://github.com/jerryjliu/llama_index/issues/7244:
-asyncio.set_event_loop(asyncio.new_event_loop())
 
 
 import sys

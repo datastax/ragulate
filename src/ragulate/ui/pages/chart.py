@@ -1,13 +1,9 @@
-import asyncio
 import sys
 from typing import Any, Dict, List, Tuple
 
 from pandas import DataFrame
 
 sys.modules["pip._vendor.typing_extensions"] = sys.modules["typing_extensions"]
-
-# https://github.com/jerryjliu/llama_index/issues/7244:
-asyncio.set_event_loop(asyncio.new_event_loop())
 
 import streamlit as st
 from plotly.io import to_html, to_image
