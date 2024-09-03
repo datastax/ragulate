@@ -13,6 +13,8 @@ sys.modules["pip._vendor.typing_extensions"] = sys.modules["typing_extensions"]
 asyncio.set_event_loop(asyncio.new_event_loop())
 
 
+import sys
+
 import pandas as pd
 import streamlit as st
 from ragulate.ui import state
@@ -23,10 +25,10 @@ from st_aggrid.grid_options_builder import GridOptionsBuilder
 from st_aggrid.shared import GridUpdateMode
 from streamlit_extras.switch_page_button import switch_page
 
-import sys
 
 def print_err(any: Any) -> None:
     print(any, file=sys.stderr)
+
 
 PAGINATION_SIZE = 10
 SELECT_ALL_TEXT = "<all>"
@@ -91,7 +93,6 @@ else:
                 width=(len("Diff") * 7) + 50,
             )
 
-
     gb = GridOptionsBuilder.from_dataframe(compare_df)
 
     gb.configure_default_column(autoHeight=True, wrapText=True)
@@ -110,7 +111,6 @@ else:
             update_mode=GridUpdateMode.SELECTION_CHANGED,
             allow_unsafe_jscode=True,
         )
-
 
         selected_rows = data.selected_rows
         selected_rows = pd.DataFrame(selected_rows)
@@ -140,7 +140,7 @@ else:
 
         # make markdwon table to show Answer and Scores
 
-        table: Dict[str, List[str]] = { "Answer": []}
+        table: Dict[str, List[str]] = {"Answer": []}
         for recipe in recipes:
             answer = selected_rows[f"output_{recipe}"][0]
             table["Answer"].append(answer)
@@ -155,8 +155,7 @@ else:
                 else:
                     table[data_col].append(f"{value}")
 
-
-        markdown_lines = ["|      |" + " | ".join(recipes) + "|" ]
+        markdown_lines = ["|      |" + " | ".join(recipes) + "|"]
         markdown_lines.append("|----" * (len(recipes) + 1) + "|")
 
         for legend, values in table.items():

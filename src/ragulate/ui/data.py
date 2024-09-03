@@ -1,5 +1,6 @@
 import json
 import sqlite3
+import sys
 from collections import defaultdict
 from contextlib import contextmanager
 from typing import Any, Dict, Generator, List, Set, Tuple
@@ -9,7 +10,6 @@ from pandas import Index
 
 from ragulate.datasets import find_dataset
 
-import sys
 
 def print_err(any: Any) -> None:
     print(any, file=sys.stderr)
@@ -317,8 +317,6 @@ def get_compare_data(
     combined_df = combined_df[
         ["input", "ground_truth"] + output_columns + remaining_columns
     ]
-
-    print_err(f"column types for recipe {recipe}:\n {combined_df.dtypes}")
 
     return combined_df, columns_to_diff
 

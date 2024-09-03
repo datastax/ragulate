@@ -17,9 +17,6 @@ from subprocess import PIPE, Popen
 from threading import Event, Thread
 from typing import IO, Any, Optional
 
-from trulens_eval.utils.notebook_utils import is_notebook, setup_widget_stdout_stderr
-from trulens_eval.utils.python import SingletonPerName
-
 logger = logging.getLogger(__name__)
 
 DASHBOARD_START_TIMEOUT: Annotated[
@@ -27,7 +24,7 @@ DASHBOARD_START_TIMEOUT: Annotated[
 ] = 30
 
 
-class Launcher(SingletonPerName):  # type: ignore[misc]
+class Launcher:
     """Launcher is the main class that provides an entry points launching the UI."""
 
     _dashboard_urls: Optional[str] = None
@@ -82,10 +79,6 @@ class Launcher(SingletonPerName):  # type: ignore[misc]
 
         """
 
-        IN_COLAB = "google.colab" in sys.modules
-        if IN_COLAB and address is not None:
-            raise ValueError("`address` argument cannot be used in colab.")
-
         if force:
             self.stop_dashboard(force=force)
 
@@ -134,8 +127,6 @@ class Launcher(SingletonPerName):  # type: ignore[misc]
             port = self.find_unused_port()
 
         args = ["streamlit", "run", "--client.showSidebarNavigation=False"]
-        if IN_COLAB:
-            args.append("--server.headless=True")
         if port is not None:
             args.append(f"--server.port={port}")
         if address is not None:
@@ -147,56 +138,9 @@ class Launcher(SingletonPerName):  # type: ignore[misc]
 
         started = threading.Event()
         tunnel_started = threading.Event()
-        if is_notebook():
-            out_stdout, out_stderr = setup_widget_stdout_stderr()
-        else:
-            out_stdout = None
-            out_stderr = None
 
-        if IN_COLAB:
-            colab_args = ["npx", "localtunnel", "--port", str(port)]
-            tunnel_proc = Popen(
-                args=colab_args,
-                stdout=PIPE,
-                stderr=PIPE,
-                text=True,
-                env=env,
-            )
-
-            def listen_to_tunnel(
-                proc: Popen[str], pipe: IO[str] | None, out: Any | None, started: Event
-            ) -> None:
-                while proc.poll() is None:
-                    if pipe is not None:
-                        line = pipe.readline()
-                        if "url" in line:
-                            started.set()
-                            line = (
-                                "Go to this url and submit the ip given here. " + line
-                            )
-
-                        if out is not None:
-                            out.append_stdout(line)
-
-                        else:
-                            print(line)
-
-            Launcher.tunnel_listener_stdout = Thread(
-                target=listen_to_tunnel,
-                args=(tunnel_proc, tunnel_proc.stdout, out_stdout, tunnel_started),
-            )
-            Launcher.tunnel_listener_stderr = Thread(
-                target=listen_to_tunnel,
-                args=(tunnel_proc, tunnel_proc.stderr, out_stderr, tunnel_started),
-            )
-            Launcher.tunnel_listener_stdout.daemon = True
-            Launcher.tunnel_listener_stderr.daemon = True
-            Launcher.tunnel_listener_stdout.start()
-            Launcher.tunnel_listener_stderr.start()
-            if not tunnel_started.wait(
-                timeout=DASHBOARD_START_TIMEOUT
-            ):  # This might not work on windows.
-                raise RuntimeError("Tunnel failed to start in time. ")
+        out_stdout = None
+        out_stderr = None
 
         def listen_to_dashboard(
             proc: Popen[str], pipe: IO[str] | None, out: Any | None, started: Event
@@ -204,55 +148,37 @@ class Launcher(SingletonPerName):  # type: ignore[misc]
             while proc.poll() is None:
                 if pipe is not None:
                     line = pipe.readline()
-                    if IN_COLAB:
-                        if "External URL: " in line:
-                            started.set()
-                            line = line.replace(
-                                "External URL: http://", "Submit this IP Address: "
-                            )
-                            line = line.replace(f":{port}", "")
-                            if out is not None:
-                                out.append_stdout(line)
-                            else:
-                                print(line)
-                            Launcher._dashboard_urls = (
-                                line  # store the url when dashboard is started
-                            )
+                    if "Network URL: " in line:
+                        started.set()
+                        Launcher._dashboard_urls = (
+                            line  # store the url when dashboard is started
+                        )
+                    if out is not None:
+                        out.append_stdout(line)
                     else:
-                        if "Network URL: " in line:
-                            started.set()
-                            Launcher._dashboard_urls = (
-                                line  # store the url when dashboard is started
-                            )
-                        if out is not None:
-                            out.append_stdout(line)
-                        else:
-                            print(line)
+                        print(line)
             if out is not None:
                 out.append_stdout("Dashboard closed.")
             else:
                 print("Dashboard closed.")
 
-        Launcher.dashboard_listener_stdout = Thread(
+        dashboard_listener_stdout = Thread(
             target=listen_to_dashboard, args=(proc, proc.stdout, out_stdout, started)
         )
-        Launcher.dashboard_listener_stderr = Thread(
+        dashboard_listener_stderr = Thread(
             target=listen_to_dashboard, args=(proc, proc.stderr, out_stderr, started)
         )
 
         # Purposely block main process from ending and wait for dashboard.
-        Launcher.dashboard_listener_stdout.daemon = False
-        Launcher.dashboard_listener_stderr.daemon = False
+        dashboard_listener_stdout.daemon = False
+        dashboard_listener_stderr.daemon = False
 
-        Launcher.dashboard_listener_stdout.start()
-        Launcher.dashboard_listener_stderr.start()
+        dashboard_listener_stdout.start()
+        dashboard_listener_stderr.start()
 
         Launcher._dashboard_proc = proc
 
         wait_period = DASHBOARD_START_TIMEOUT
-        if IN_COLAB:
-            # Need more time to setup 2 processes tunnel and dashboard
-            wait_period = wait_period * 3
 
         # This might not work on windows.
         if not started.wait(timeout=wait_period):
