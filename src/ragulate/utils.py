@@ -1,10 +1,8 @@
 from __future__ import annotations
-
 import re
 from typing import Any
 
 from trulens_eval import Tru
-
 
 def get_tru(recipe_name: str) -> Tru:
     """Return Tru for given recipe name."""

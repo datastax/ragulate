@@ -23,6 +23,11 @@ from st_aggrid.grid_options_builder import GridOptionsBuilder
 from st_aggrid.shared import GridUpdateMode
 from streamlit_extras.switch_page_button import switch_page
 
+import sys
+
+def print_err(any: Any) -> None:
+    print(any, file=sys.stderr)
+
 PAGINATION_SIZE = 10
 SELECT_ALL_TEXT = "<all>"
 
@@ -31,7 +36,7 @@ st.set_page_config(page_title="Ragulate - Compare", layout="wide")
 numericColumnType = ["numericColumn", "numberColumnFilter"]
 
 
-# @st.cache_data
+@st.cache_data
 def get_data(
     recipes: List[str], dataset: str, filter: Dict[str, Any], timestamp: int
 ) -> Tuple[pd.DataFrame, List[str]]:
@@ -86,6 +91,7 @@ else:
                 width=(len("Diff") * 7) + 50,
             )
 
+
     gb = GridOptionsBuilder.from_dataframe(compare_df)
 
     gb.configure_default_column(autoHeight=True, wrapText=True)
@@ -96,6 +102,7 @@ else:
 
     gridOptions = gb.build()
     gridOptions["columnDefs"] = get_column_defs(columns=columns)
+
     with st.container():
         data = AgGrid(
             compare_df,
@@ -103,6 +110,7 @@ else:
             update_mode=GridUpdateMode.SELECTION_CHANGED,
             allow_unsafe_jscode=True,
         )
+
 
         selected_rows = data.selected_rows
         selected_rows = pd.DataFrame(selected_rows)
@@ -130,21 +138,39 @@ else:
         st.subheader(f"Ground Truth")
         st.write(selected_rows["ground_truth"][0])
 
-        table = {}
+        # make markdwon table to show Answer and Scores
+
+        table: Dict[str, List[str]] = { "Answer": []}
         for recipe in recipes:
-            column_data = [selected_rows[f"output_{recipe}"][0]]
+            answer = selected_rows[f"output_{recipe}"][0]
+            table["Answer"].append(answer)
             for data_col in data_cols:
-                column_data.append(selected_rows[f"{data_col}_{recipe}"][0])
-            table[recipe] = column_data
+                if data_col not in table:
+                    table[data_col] = []
+                value = selected_rows[f"{data_col}_{recipe}"][0]
+                if value is None:
+                    table[data_col].append("")
+                elif data_col != "total_tokens":
+                    table[data_col].append("{:.2f}".format(value))
+                else:
+                    table[data_col].append(f"{value}")
 
-        context_indexes: Dict[str, Dict[str, int]] = {}
 
-        df = pd.DataFrame(table)
-        df.index = Index(["Answer"] + data_cols)
+        markdown_lines = ["|      |" + " | ".join(recipes) + "|" ]
+        markdown_lines.append("|----" * (len(recipes) + 1) + "|")
+
+        for legend, values in table.items():
+            line = f"| {legend} | "
+            for value in values:
+                line += f" {value} |"
+            markdown_lines.append(line)
+
         st.subheader(f"Results")
-        st.table(df)
+
+        st.markdown("\n".join(markdown_lines))
 
         st.subheader(f"Contexts")
+        context_indexes: Dict[str, Dict[str, int]] = {}
         context_cols = st.columns(len(recipes))
         for i, recipe in enumerate(recipes):
             context_indexes[recipe] = {}
@@ -159,7 +185,7 @@ else:
                         st.json(context["metadata"], expanded=False)
                         st.caption("Content")
                         st.write(context["page_content"])
-            except TypeError:
+            except (TypeError, KeyError):
                 continue
 
         st.subheader(f"Reasons")
@@ -167,16 +193,19 @@ else:
         with st.expander(f"Answer Relevance"):
             reason_cols = st.columns(len(recipes))
             for i, recipe in enumerate(recipes):
-                calls = detail_data[recipe]["calls"]["answer_relevance"]
+                try:
+                    calls = detail_data[recipe]["calls"]["answer_relevance"]
 
-                if len(calls) > 0:
-                    call = calls[0]
-                    reason = split_into_dict(
-                        call["reason"], ["Criteria", "Supporting Evidence"]
-                    )
-                    reason["score"] = call["score"]
+                    if len(calls) > 0:
+                        call = calls[0]
+                        reason = split_into_dict(
+                            call["reason"], ["Criteria", "Supporting Evidence"]
+                        )
+                        reason["score"] = call["score"]
 
-                    reason_cols[i].json(reason)
+                        reason_cols[i].json(reason)
+                except (TypeError, KeyError):
+                    continue
 
         with st.expander(f"Context Relevance"):
             reason_cols = st.columns(len(recipes))
@@ -195,7 +224,7 @@ else:
                         reason["score"] = call["score"]
                         context_reasons[context_index] = reason
                     reason_cols[i].json(context_reasons)
-                except TypeError:
+                except (TypeError, KeyError):
                     continue
 
         with st.expander(f"Groundedness"):
@@ -211,5 +240,5 @@ else:
                         reasons.append(call)
 
                     reason_cols[i].json(reasons)
-                except TypeError:
+                except (TypeError, KeyError):
                     continue
