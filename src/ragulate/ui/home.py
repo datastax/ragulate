@@ -12,11 +12,9 @@ from typing import Any, Dict, List, Tuple
 
 import state
 import streamlit as st
-from streamlit_extras.switch_page_button import switch_page
 
 from ragulate.data import get_all_recipes, get_datasets_and_metadata
-
-st.set_page_config(page_title="Ragulate - Home", layout="wide")
+from ragulate.ui.utils import write_button_row
 
 if __name__ == "__main__":
     if "home_cache_time" not in st.session_state:
@@ -50,8 +48,9 @@ def get_datasets_and_recipes(timestamp: int) -> Tuple[DatasetToRecipeMap, Metada
     return dataset_to_recipe_map, metadata_map
 
 
-def home() -> None:
-    """Render the home page."""
+def draw_page() -> None:
+    st.set_page_config(page_title="Ragulate - Home", layout="wide")
+    button_row_container = st.container()
 
     st.write("Select Dataset and at least 2 Recipes to Compare...")
 
@@ -83,21 +82,9 @@ def home() -> None:
                     st.json(metadata)
                 state.set_recipe_state(recipe=recipe, value=value)
 
-    selected_recipes = state.get_selected_recipes()
-
-    col1, col2, col3 = st.columns(3)
-
-    buttons_disabled = len(selected_recipes) < 2
-
-    if col1.button("Compare", key="button_compare", disabled=buttons_disabled):
-        switch_page("compare")
-
-    if col2.button("Chart", key="button_chart", disabled=buttons_disabled):
-        switch_page("chart")
-
-    if col3.button("Filter", key="button_filter", disabled=buttons_disabled):
-        switch_page("filter")
+    with button_row_container:
+        selected_recipes = state.get_selected_recipes()
+        write_button_row("home", disable_non_home=len(selected_recipes) < 2)
 
 
-if __name__ == "__main__":
-    home()
+draw_page()

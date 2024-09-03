@@ -1,6 +1,6 @@
 import asyncio
 import sys
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any, Dict, List, Tuple
 
 from pandas import DataFrame
 
@@ -14,9 +14,8 @@ from plotly.io import to_html, to_image
 from ragulate.analysis import Analysis
 from ragulate.data import get_chart_data
 from ragulate.ui import state
+from ragulate.ui.utils import write_button_row
 from streamlit_extras.switch_page_button import switch_page
-
-st.set_page_config(page_title="Ragulate - Chart", layout="wide")
 
 
 @st.cache_data
@@ -28,19 +27,20 @@ def get_data(
     )
 
 
-metadata_filter = state.get_metadata_filter()
-st.write(metadata_filter)
+def draw_page() -> None:
+    st.set_page_config(page_title="Ragulate - Chart", layout="wide")
+    button_row_container = st.container()
 
-if st.button("home"):
-    switch_page("home")
+    recipes = list(state.get_selected_recipes())
+    dataset = state.get_selected_dataset()
+    if dataset is None or len(recipes) < 2:
+        switch_page("home")
+        return
 
-recipes = list(state.get_selected_recipes())
-dataset = state.get_selected_dataset()
+    metadata_filter = state.get_metadata_filter()
+    st.caption("metadata filter:")
+    st.json(metadata_filter)
 
-
-if dataset is None:
-    switch_page("home")
-else:
     df, feedbacks = get_data(
         recipes=recipes, dataset=dataset, metadata_filter=metadata_filter, timestamp=0
     )
@@ -57,10 +57,8 @@ else:
         st.image(image=svg_bytes.decode("utf-8"))
         # st.html(to_html(fig=figures[dataset], full_html=False))
 
-    col1, _, col3 = st.columns(3)
+    with button_row_container:
+        write_button_row(current_page="chart")
 
-    if col1.button(label="Compare"):
-        switch_page("compare")
 
-    if col3.button(label="Filter"):
-        switch_page("filter")
+draw_page()

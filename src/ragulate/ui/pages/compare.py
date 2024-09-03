@@ -20,22 +20,17 @@ import streamlit as st
 from ragulate.data import get_compare_data, get_detail_data, split_into_dict
 from ragulate.ui import state
 from ragulate.ui.column import Column, get_column_defs
+from ragulate.ui.utils import write_button_row
 from st_aggrid import AgGrid
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 from st_aggrid.shared import GridUpdateMode
 from streamlit_extras.switch_page_button import switch_page
 
+PAGINATION_SIZE = 10
+
 
 def print_err(any: Any) -> None:
     print(any, file=sys.stderr)
-
-
-PAGINATION_SIZE = 10
-SELECT_ALL_TEXT = "<all>"
-
-st.set_page_config(page_title="Ragulate - Compare", layout="wide")
-
-numericColumnType = ["numericColumn", "numberColumnFilter"]
 
 
 @st.cache_data
@@ -45,26 +40,22 @@ def get_data(
     return get_compare_data(recipes=recipes, dataset=dataset, metadata_filter=filter)
 
 
-col1, col2 = st.columns(2)
-if col1.button("home"):
-    switch_page("home")
+def draw_page() -> None:
+    st.set_page_config(page_title="Ragulate - Compare", layout="wide")
+    button_row_container = st.container()
 
-if col2.button("filter"):
-    switch_page("filter")
+    recipes = list(state.get_selected_recipes())
+    dataset = state.get_selected_dataset()
+    if dataset is None or len(recipes) < 2:
+        switch_page("home")
+        return
 
-recipes = list(state.get_selected_recipes())
-dataset = state.get_selected_dataset()
-
-if dataset is None or len(recipes) < 2:
-    switch_page("home")
-else:
     filter = state.get_metadata_filter()
     compare_df, data_cols = get_data(
         recipes=recipes, dataset=dataset, filter=filter, timestamp=0
     )
 
     columns: Dict[str, Column] = {}
-
     columns["Query"] = Column(field="input", style={"word-break": "break-word"})
     columns["Answer"] = Column()
     columns["Metadata"] = Column(field=f"metadata", hide=True)
@@ -78,6 +69,7 @@ else:
         field="ground_truth", width=400, style={"word-break": "break-word"}
     )
 
+    numericColumnType = ["numericColumn", "numberColumnFilter"]
     for data_col in data_cols:
         columns[data_col] = Column()
         for recipe in recipes:
@@ -104,16 +96,15 @@ else:
     gridOptions = gb.build()
     gridOptions["columnDefs"] = get_column_defs(columns=columns)
 
-    with st.container():
-        data = AgGrid(
-            compare_df,
-            gridOptions=gridOptions,
-            update_mode=GridUpdateMode.SELECTION_CHANGED,
-            allow_unsafe_jscode=True,
-        )
+    data = AgGrid(
+        compare_df,
+        gridOptions=gridOptions,
+        update_mode=GridUpdateMode.SELECTION_CHANGED,
+        allow_unsafe_jscode=True,
+    )
 
-        selected_rows = data.selected_rows
-        selected_rows = pd.DataFrame(selected_rows)
+    selected_rows = data.selected_rows
+    selected_rows = pd.DataFrame(selected_rows)
 
     if len(selected_rows) == 0:
         st.write("Hint: select a row to display details of a record")
@@ -241,3 +232,9 @@ else:
                     reason_cols[i].json(reasons)
                 except (TypeError, KeyError):
                     continue
+
+    with button_row_container:
+        write_button_row(current_page="compare")
+
+
+draw_page()

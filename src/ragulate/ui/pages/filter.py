@@ -10,15 +10,10 @@ asyncio.set_event_loop(asyncio.new_event_loop())
 import streamlit as st
 from ragulate.data import get_metadata_options
 from ragulate.ui import state
+from ragulate.ui.utils import write_button_row
 from streamlit_extras.switch_page_button import switch_page
 
 SELECT_ALL_TEXT = "<all>"
-
-st.set_page_config(page_title="Ragulate - Filter", layout="wide")
-
-metadata_filter = state.get_metadata_filter()
-for key, value in metadata_filter.items():
-    state.set_page_item_if_empty(key=f"select_filter_{key}", value=value)
 
 
 @st.cache_data
@@ -28,24 +23,23 @@ def get_metadata_filter_options(
     return get_metadata_options(recipes=recipes, dataset=dataset)
 
 
-if st.button("home"):
-    state.clear_page_loaded("filter")
-    switch_page("home")
+def draw_page() -> None:
+    st.set_page_config(page_title="Ragulate - Filter", layout="wide")
+    button_row_container = st.container()
 
-recipes = list(state.get_selected_recipes())
-dataset = state.get_selected_dataset()
+    recipes = list(state.get_selected_recipes())
+    dataset = state.get_selected_dataset()
+    if dataset is None or len(recipes) < 2:
+        switch_page("home")
+        return
 
-if dataset is None:
-    switch_page("home")
-else:
+    metadata_filter = state.get_metadata_filter()
+    for key, value in metadata_filter.items():
+        state.set_page_item_if_empty(key=f"select_filter_{key}", value=value)
+
     metadata_options = get_metadata_filter_options(
         recipes=recipes, dataset=dataset, timestamp=0
     )
-
-    for key, options in metadata_options.items():
-        sorted_options = sorted(list(options))
-        sorted_options.insert(0, SELECT_ALL_TEXT)
-        st.selectbox(label=key, options=sorted_options, key=f"select_filter_{key}")
 
     def set_metadata_filter() -> None:
         filter: Dict[str, Any] = {}
@@ -55,12 +49,18 @@ else:
                 filter[key] = value
         state.set_metadata_filter(filter=filter)
 
-    col1, col2, _ = st.columns(3)
+    for key, options in metadata_options.items():
+        sorted_options = sorted(list(options))
+        sorted_options.insert(0, SELECT_ALL_TEXT)
+        st.selectbox(
+            label=key,
+            options=sorted_options,
+            key=f"select_filter_{key}",
+            on_change=set_metadata_filter,
+        )
 
-    if col1.button(label="Compare"):
-        set_metadata_filter()
-        switch_page("compare")
+    with button_row_container:
+        write_button_row(current_page="filter")
 
-    if col2.button(label="Chart"):
-        set_metadata_filter()
-        switch_page("chart")
+
+draw_page()
