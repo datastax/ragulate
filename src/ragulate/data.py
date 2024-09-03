@@ -83,6 +83,8 @@ def get_metadata_options_for_recipe(recipe: str, dataset: str) -> Dict[str, List
     # Convert sets to lists
     return {str(key): list(values) for key, values in unique_values.items()}
 
+def decode_utf8(text: str) -> str:
+    return text.encode('utf-8').decode('unicode_escape').removeprefix("\"").removesuffix("\"")
 
 def get_data_for_recipe(
     recipe: str,
@@ -139,7 +141,13 @@ def get_data_for_recipe(
                 {'\n                AND '.join(wheres)}
             """
 
-        return pd.read_sql_query(sql=chart_data_query, con=conn), feedbacks
+        df = pd.read_sql_query(sql=chart_data_query, con=conn)
+
+        if include_in_and_out:
+            df["input"] = df["input"].apply(decode_utf8)
+            df["output"] = df["output"].apply(decode_utf8)
+
+        return df, feedbacks
     finally:
         conn.close()
 
@@ -300,7 +308,7 @@ def get_compare_data(
 
     ground_truths: Dict[str, str] = {}
     for query_response in find_dataset(name=dataset).get_golden_set():
-        ground_truths[f"\"{query_response["query"]}\""] = query_response["response"]
+        ground_truths[query_response["query"]] = query_response["response"]
 
     combined_df["ground_truth"] = combined_df["input"].map(ground_truths)
 
