@@ -105,7 +105,7 @@ class Analysis:
                 jitter=1,
             )
             fig.update_layout(
-                margin_l = longest_feedback * 7,
+                margin_l=longest_feedback * 7,
                 boxmode="group",
                 height=height,
                 width=900,

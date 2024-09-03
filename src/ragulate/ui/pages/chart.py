@@ -50,7 +50,6 @@ def draw_page() -> None:
     box_plots = analysis.box_plots_by_dataset(df=df, feedbacks=feedbacks)
     histograms = analysis.histograms_by_dataset(df=df, feedbacks=feedbacks)
 
-
     if dataset not in box_plots and dataset not in histograms:
         st.write("Analysis failed")
     else:
