@@ -35,7 +35,7 @@ These images show distribution box plots of the metrics for different test runs.
 ## Installation
 
 ```sh
-pip install ragstack-ai-ragulate
+pip install ragulate
 ```
 
 ## Initial Setup
