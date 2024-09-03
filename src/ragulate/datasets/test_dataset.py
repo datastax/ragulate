@@ -13,7 +13,7 @@ class TestDataset(BaseDataset):
 
     def _load_query_items_and_golden_set(self) -> None:
         self._query_items = [
-            QueryItem("Query 1", metadata={}),
+            QueryItem("Quéry 1", metadata={}),
             QueryItem("Query 2", metadata={}),
             QueryItem("Query 3", metadata={}),
             QueryItem("Query 4", metadata={}),

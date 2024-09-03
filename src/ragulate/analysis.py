@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Dict, Set
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,67 +9,26 @@ import plotly.graph_objects as go
 import seaborn as sns
 from plotly.io import write_image
 
-from .utils import get_tru
+from ragulate.data import get_chart_data, get_datasets_and_metadata
 
 
 class Analysis:
     """Analysis class."""
 
-    def get_all_data(self, recipes: list[str]) -> tuple[pd.DataFrame, list[str]]:
-        """Get all data from the recipes."""
-        df_all = pd.DataFrame()
-
-        all_metrics: list[str] = []
-
-        for recipe in recipes:
-            tru = get_tru(recipe_name=recipe)
-
-            for app in tru.get_apps():
-                dataset = app["app_id"]
-                df_records, metrics = tru.get_records_and_feedback([dataset])
-                all_metrics.extend(metrics)
-
-                columns_to_keep = [
-                    *metrics,
-                    "record_id",
-                    "latency",
-                    "total_tokens",
-                    "total_cost",
-                ]
-                columns_to_drop = [
-                    col for col in df_records.columns if col not in columns_to_keep
-                ]
-
-                df_records = df_records.drop(columns=columns_to_drop)
-                df_records["recipe"] = recipe
-                df_records["dataset"] = dataset
-
-                # set negative values to None
-                for metric in metrics:
-                    df_records.loc[df_records[metric] < 0, metric] = None
-
-                df_all = pd.concat([df_all, df_records], axis=0, ignore_index=True)
-
-            tru.delete_singleton()
-
-        reset_df = df_all.reset_index(drop=True)
-
-        return reset_df, list(set(all_metrics))
-
     def calculate_statistics(
-        self, df: pd.DataFrame, metrics: list[str]
+        self, df: pd.DataFrame, feedbacks: list[str]
     ) -> dict[str, Any]:
         """Calculate statistics."""
         stats: dict[str, Any] = {}
         for recipe in df["recipe"].unique():
             stats[recipe] = {}
-            for metric in metrics:
-                stats[recipe][metric] = {}
+            for feedback in feedbacks:
+                stats[recipe][feedback] = {}
                 for dataset in df["dataset"].unique():
                     data = df[(df["recipe"] == recipe) & (df["dataset"] == dataset)][
-                        metric
+                        feedback
                     ]
-                    stats[recipe][metric][dataset] = {
+                    stats[recipe][feedback][dataset] = {
                         "high": data.max(),
                         "low": data.min(),
                         "median": data.median(),
@@ -79,13 +38,19 @@ class Analysis:
                     }
         return stats
 
-    def output_box_plots_by_dataset(self, df: pd.DataFrame, metrics: list[str]) -> None:
+    def box_plots_by_dataset(
+        self, df: pd.DataFrame, feedbacks: list[str]
+    ) -> Dict[str, go.Figure]:
         """Output box plots by dataset."""
-        stats = self.calculate_statistics(df, metrics)
+        stats = self.calculate_statistics(df, feedbacks)
         recipes = sorted(df["recipe"].unique(), key=lambda x: x.lower())
         datasets = sorted(df["dataset"].unique(), key=lambda x: x.lower())
-        metrics = sorted(metrics)
-        metrics.reverse()
+        feedbacks = sorted(feedbacks)
+        feedbacks.reverse()
+
+        longest_feedback = 0
+        for feedback in feedbacks:
+            longest_feedback = max(longest_feedback, len(feedback))
 
         # generate an array of rainbow colors by fixing the saturation and lightness of
         # the HSL representation of color and marching around the hue.
@@ -94,7 +59,9 @@ class Analysis:
             for h in np.linspace(0, 360, len(recipes) + 1)
         ]
 
-        height = max((len(metrics) * len(recipes) * 20) + 150, 450)
+        height = max((len(feedbacks) * len(recipes) * 20) + 150, 450)
+
+        figures: Dict[str, go.Figure] = {}
 
         for dataset in datasets:
             fig = go.Figure()
@@ -106,9 +73,9 @@ class Analysis:
                 q3 = []
                 low = []
                 high = []
-                for metric in metrics:
-                    stat = stats[recipe][metric][dataset]
-                    y.append(metric)
+                for feedback in feedbacks:
+                    stat = stats[recipe][feedback][dataset]
+                    y.append(feedback)
                     x.append(stat["mean"])
                     q1.append(stat["1st_quartile"])
                     median.append(stat["median"])
@@ -138,6 +105,7 @@ class Analysis:
                 jitter=1,
             )
             fig.update_layout(
+                margin_l=longest_feedback * 7,
                 boxmode="group",
                 height=height,
                 width=900,
@@ -158,18 +126,28 @@ class Analysis:
                     "x": 1,
                 },
             )
+            figures[dataset] = fig
+        return figures
 
+    def output_box_plots_by_dataset(
+        self, df: pd.DataFrame, feedbacks: list[str]
+    ) -> None:
+        figures = self.box_plots_by_dataset(df=df, feedbacks=feedbacks)
+
+        for dataset, fig in figures.items():
             write_image(fig, f"./{dataset}_box_plot.png")
 
-    def output_histograms_by_dataset(
-        self, df: pd.DataFrame, metrics: list[str]
-    ) -> None:
+    def histograms_by_dataset(
+        self, df: pd.DataFrame, feedbacks: list[str]
+    ) -> Dict[str, sns.FacetGrid]:
         """Output histograms by dataset."""
-        # Append "latency" to the metrics list
-        metrics.append("latency")
+        # Append "latency" to the feedbacks list
+        feedbacks.append("latency")
 
         # Get unique datasets
         datasets = df["dataset"].unique()
+
+        figures: Dict[str, sns.FacetGrid] = {}
 
         for dataset in datasets:
             # Filter DataFrame for the current dataset
@@ -179,7 +157,7 @@ class Analysis:
             df_melted = pd.melt(
                 df_filtered,
                 id_vars=["record_id", "recipe", "dataset"],
-                value_vars=metrics,
+                value_vars=feedbacks,
                 var_name="metric",
                 value_name="value",
             )
@@ -189,12 +167,12 @@ class Analysis:
 
             # Custom function to set bin ranges and filter invalid values
             def custom_hist(data: dict[str, Any], **kws: Any) -> None:
-                metric = data["metric"].iloc[0]
+                feedback = data["metric"].iloc[0]
                 data = data[
                     np.isfinite(data["value"])
                 ]  # Remove NaN and infinite values
                 data = data[data["value"] >= 0]  # Ensure no negative values
-                if metric == "latency":
+                if feedback == "latency":
                     bins = np.concatenate(
                         [
                             np.linspace(
@@ -233,12 +211,12 @@ class Analysis:
             # Map the custom histogram function to the FacetGrid
             g.map_dataframe(custom_hist)
 
-            for ax, metric in zip(
+            for ax, feedback in zip(
                 g.axes.flat, g.col_names * len(g.row_names), strict=False
             ):
                 ax.set_ylim(0, 100)
                 # Set custom x-axis label
-                if metric == "latency":
+                if feedback == "latency":
                     ax.set_xlabel("Seconds")
                 else:
                     ax.set_xlabel("Score")
@@ -251,6 +229,15 @@ class Analysis:
             # Adjust the layout to make room for the title
             g.figure.subplots_adjust(top=0.9)
 
+            figures[dataset] = g
+
+        return figures
+
+    def output_histograms_by_dataset(
+        self, df: pd.DataFrame, feedbacks: list[str]
+    ) -> None:
+        figures = self.histograms_by_dataset(df=df, feedbacks=feedbacks)
+        for dataset, g in figures.items():
             # Save the plot as a PNG file
             g.savefig(f"./{dataset}_histogram_grid.png")
 
@@ -259,10 +246,18 @@ class Analysis:
 
     def compare(self, recipes: list[str], output: str = "box-plots") -> None:
         """Compare results from 2 (or more) recipes."""
-        df, metrics = self.get_all_data(recipes=recipes)
-        if output == "box-plots":
-            self.output_box_plots_by_dataset(df=df, metrics=metrics)
-        elif output == "histogram-grid":
-            self.output_histograms_by_dataset(df=df, metrics=metrics)
-        else:
-            raise ValueError(f"Invalid output type: {output}")
+        unique_datasets: Set[str] = set()
+        for recipe in recipes:
+            datasets = get_datasets_and_metadata(recipe=recipe).keys()
+            unique_datasets = unique_datasets.union(datasets)
+
+        for dataset in unique_datasets:
+            df, feedbacks = get_chart_data(
+                recipes=recipes, dataset=dataset, metadata_filter={}
+            )
+            if output == "box-plots":
+                self.output_box_plots_by_dataset(df=df, feedbacks=feedbacks)
+            elif output == "histogram-grid":
+                self.output_histograms_by_dataset(df=df, feedbacks=feedbacks)
+            else:
+                raise ValueError(f"Invalid output type: {output}")

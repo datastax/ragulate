@@ -66,10 +66,14 @@ class QueryPipeline(BasePipeline):
     def _filter_completed_queries(
         self, query_items: List[QueryItem], existing_queries: List[str]
     ) -> List[QueryItem]:
+        decoded_queries = [
+            q.encode("utf-8").decode("unicode_escape") for q in existing_queries
+        ]
+
         return [
             query_item
             for query_item in query_items
-            if f'"{query_item.query}"' not in existing_queries
+            if f'"{query_item.query}"' not in decoded_queries
         ]
 
     def __init__(
@@ -167,7 +171,7 @@ class QueryPipeline(BasePipeline):
                 logger.exception("issue stopping evaluator")
             finally:
                 self._progress.close()
-                self.export_results()
+                # self.export_results()
 
     def update_progress(self, query_change: int = 0) -> None:
         """Update progress bar."""

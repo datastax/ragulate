@@ -15,7 +15,7 @@ def setup_query(subparsers) -> None:  # type: ignore[no-untyped-def]
         "--name",
         type=str,
         help="A unique name for the query pipeline",
-        required=True,
+        required=False,
     )
     query_parser.add_argument(
         "-s",

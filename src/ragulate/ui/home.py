@@ -1,27 +1,18 @@
-import asyncio
-import glob
-import os
 import sys
 
 from typing_extensions import Generic, Protocol
 
 sys.modules["pip._vendor.typing_extensions"] = sys.modules["typing_extensions"]
 
-# https://github.com/jerryjliu/llama_index/issues/7244:
-asyncio.set_event_loop(asyncio.new_event_loop())
-
-from typing import Dict, List
+from typing import Any, Dict, List, Tuple
 
 import state
 import streamlit as st
-from streamlit_extras.switch_page_button import switch_page
 
-from ragulate.utils import get_tru
+from ragulate.data import get_all_recipes, get_datasets_and_metadata
+from ragulate.ui.utils import write_button_row
 
 if __name__ == "__main__":
-    if "home_cache_time" not in st.session_state:
-        st.session_state.home_cache_time = 0
-
     # restore dataset selector state
     if state.dataset_key() not in st.session_state:
         state.set_page_item(state.dataset_key(), state.get_selected_dataset())
@@ -30,32 +21,37 @@ if __name__ == "__main__":
         for selected_recipe in state.get_selected_recipes():
             state.set_page_item(state.recipe_key(selected_recipe), True)
 
+MetadataMap = Dict[str, Dict[str, Dict[str, Any]]]
+DatasetToRecipeMap = Dict[str, List[str]]
+
 
 @st.cache_data
-def get_datasets_and_recipes(timestamp: int) -> Dict[str, List[str]]:
-    dataset_to_recipe_map: Dict[str, List[str]] = {"<none>": []}
+def get_datasets_and_recipes(
+    timestamp: float,
+) -> Tuple[DatasetToRecipeMap, MetadataMap]:
+    dataset_to_recipe_map: DatasetToRecipeMap = {"<none>": []}
+    metadata_map: MetadataMap = {}
 
-    for file in glob.glob(os.path.join("*.sqlite")):
-        recipe_name = file.removesuffix(".sqlite")
-        tru = get_tru(recipe_name=recipe_name)
-
-        for app in tru.get_apps():
-            dataset = app["app_id"]
+    for recipe in get_all_recipes():
+        for dataset, metadata in get_datasets_and_metadata(recipe=recipe).items():
             if dataset not in dataset_to_recipe_map:
                 dataset_to_recipe_map[dataset] = []
-            dataset_to_recipe_map[dataset].append(recipe_name)
+                metadata_map[dataset] = {}
+            dataset_to_recipe_map[dataset].append(recipe)
+            metadata_map[dataset][recipe] = metadata
 
-        tru.delete_singleton()
-
-    return dataset_to_recipe_map
+    return dataset_to_recipe_map, metadata_map
 
 
-def home() -> None:
-    """Render the home page."""
+def draw_page() -> None:
+    st.set_page_config(page_title="Ragulate - Home", layout="wide")
+    button_row_container = st.container()
 
     st.write("Select Dataset and at least 2 Recipes to Compare...")
 
-    dataset_to_recipe_map = get_datasets_and_recipes(st.session_state.home_cache_time)
+    dataset_to_recipe_map, metadata_map = get_datasets_and_recipes(
+        timestamp=state.get_data_timestamp()
+    )
 
     col1, col2 = st.columns(2)
 
@@ -74,13 +70,16 @@ def home() -> None:
         if selected_dataset is not None:
             for recipe in dataset_to_recipe_map[selected_dataset]:
                 value = st.checkbox(label=recipe, key=state.recipe_key(recipe=recipe))
+                metadata = metadata_map[selected_dataset][recipe]
+                del metadata["recipe_name"]
+                del metadata["dataset_name"]
+                with st.expander("metadata:", expanded=False):
+                    st.json(metadata)
                 state.set_recipe_state(recipe=recipe, value=value)
 
-    selected_recipes = state.get_selected_recipes()
+    with button_row_container:
+        selected_recipes = state.get_selected_recipes()
+        write_button_row("home", disable_non_home=len(selected_recipes) < 2)
 
-    if st.button("Compare", key="button_compare", disabled=len(selected_recipes) < 2):
-        switch_page("compare")
 
-
-if __name__ == "__main__":
-    home()
+draw_page()

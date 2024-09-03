@@ -5,6 +5,7 @@
 .streamlit
 .venv
 .vscode
+.env
 __pycache__
 
 datasets
