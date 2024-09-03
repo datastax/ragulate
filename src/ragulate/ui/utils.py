@@ -1,9 +1,11 @@
 import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
 
+from ragulate.ui.state import set_data_timestamp
+
 
 def write_button_row(current_page: str, disable_non_home: bool = False) -> None:
-    colHome, colCompare, colChart, colFilter = st.columns(4)
+    colHome, colCompare, colChart, colFilter, colRefresh = st.columns(5)
     if colHome.button("home", disabled=current_page == "home"):
         switch_page("home")
 
@@ -19,3 +21,6 @@ def write_button_row(current_page: str, disable_non_home: bool = False) -> None:
         "filter", disabled=current_page == "filter" or disable_non_home
     ):
         switch_page("filter")
+
+    if colRefresh.button("refresh", disabled=False):
+        set_data_timestamp()

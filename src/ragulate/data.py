@@ -83,8 +83,15 @@ def get_metadata_options_for_recipe(recipe: str, dataset: str) -> Dict[str, List
     # Convert sets to lists
     return {str(key): list(values) for key, values in unique_values.items()}
 
+
 def decode_utf8(text: str) -> str:
-    return text.encode('utf-8').decode('unicode_escape').removeprefix("\"").removesuffix("\"")
+    return (
+        text.encode("utf-8")
+        .decode("unicode_escape")
+        .removeprefix('"')
+        .removesuffix('"')
+    )
+
 
 def get_data_for_recipe(
     recipe: str,

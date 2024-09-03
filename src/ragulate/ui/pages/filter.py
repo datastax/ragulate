@@ -14,7 +14,7 @@ SELECT_ALL_TEXT = "<all>"
 
 @st.cache_data
 def get_metadata_filter_options(
-    recipes: List[str], dataset: str, timestamp: int
+    recipes: List[str], dataset: str, timestamp: float
 ) -> Dict[str, Set[Any]]:
     return get_metadata_options(recipes=recipes, dataset=dataset)
 
@@ -34,7 +34,7 @@ def draw_page() -> None:
         state.set_page_item_if_empty(key=f"select_filter_{key}", value=value)
 
     metadata_options = get_metadata_filter_options(
-        recipes=recipes, dataset=dataset, timestamp=0
+        recipes=recipes, dataset=dataset, timestamp=state.get_data_timestamp()
     )
 
     def set_metadata_filter() -> None:

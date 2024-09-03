@@ -66,7 +66,9 @@ class QueryPipeline(BasePipeline):
     def _filter_completed_queries(
         self, query_items: List[QueryItem], existing_queries: List[str]
     ) -> List[QueryItem]:
-        decoded_queries = [q.encode('utf-8').decode('unicode_escape') for q in existing_queries]
+        decoded_queries = [
+            q.encode("utf-8").decode("unicode_escape") for q in existing_queries
+        ]
 
         return [
             query_item

@@ -16,7 +16,7 @@ from streamlit_extras.switch_page_button import switch_page
 
 @st.cache_data
 def get_data(
-    recipes: List[str], dataset: str, metadata_filter: Dict[str, Any], timestamp: int
+    recipes: List[str], dataset: str, metadata_filter: Dict[str, Any], timestamp: float
 ) -> Tuple[DataFrame, List[str]]:
     return get_chart_data(
         recipes=recipes, dataset=dataset, metadata_filter=metadata_filter
@@ -38,7 +38,10 @@ def draw_page() -> None:
     st.json(metadata_filter)
 
     df, feedbacks = get_data(
-        recipes=recipes, dataset=dataset, metadata_filter=metadata_filter, timestamp=0
+        recipes=recipes,
+        dataset=dataset,
+        metadata_filter=metadata_filter,
+        timestamp=state.get_data_timestamp(),
     )
 
     analysis = Analysis()

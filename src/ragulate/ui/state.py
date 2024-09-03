@@ -1,3 +1,5 @@
+import sys
+import time
 from typing import Any, Dict, List, Set
 
 import streamlit as st
@@ -81,3 +83,11 @@ def get_page_loaded(page: str) -> bool:
 def clear_page_loaded(page: str) -> None:
     if f"page_{page}" in st.session_state:
         del st.session_state[f"page_{page}"]
+
+
+def set_data_timestamp() -> None:
+    st.session_state["data_timestamp"] = time.time()
+
+
+def get_data_timestamp() -> float:
+    return st.session_state.get("data_timestamp", 0.0)

@@ -31,7 +31,7 @@ def print_err(any: Any) -> None:
 
 @st.cache_data
 def get_data(
-    recipes: List[str], dataset: str, filter: Dict[str, Any], timestamp: int
+    recipes: List[str], dataset: str, filter: Dict[str, Any], timestamp: float
 ) -> Tuple[pd.DataFrame, List[str]]:
     return get_compare_data(recipes=recipes, dataset=dataset, metadata_filter=filter)
 
@@ -48,7 +48,10 @@ def draw_page() -> None:
 
     filter = state.get_metadata_filter()
     compare_df, data_cols = get_data(
-        recipes=recipes, dataset=dataset, filter=filter, timestamp=0
+        recipes=recipes,
+        dataset=dataset,
+        filter=filter,
+        timestamp=state.get_data_timestamp(),
     )
 
     columns: Dict[str, Column] = {}

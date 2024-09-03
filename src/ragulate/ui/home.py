@@ -13,9 +13,6 @@ from ragulate.data import get_all_recipes, get_datasets_and_metadata
 from ragulate.ui.utils import write_button_row
 
 if __name__ == "__main__":
-    if "home_cache_time" not in st.session_state:
-        st.session_state.home_cache_time = 0
-
     # restore dataset selector state
     if state.dataset_key() not in st.session_state:
         state.set_page_item(state.dataset_key(), state.get_selected_dataset())
@@ -29,7 +26,9 @@ DatasetToRecipeMap = Dict[str, List[str]]
 
 
 @st.cache_data
-def get_datasets_and_recipes(timestamp: int) -> Tuple[DatasetToRecipeMap, MetadataMap]:
+def get_datasets_and_recipes(
+    timestamp: float,
+) -> Tuple[DatasetToRecipeMap, MetadataMap]:
     dataset_to_recipe_map: DatasetToRecipeMap = {"<none>": []}
     metadata_map: MetadataMap = {}
 
@@ -51,7 +50,7 @@ def draw_page() -> None:
     st.write("Select Dataset and at least 2 Recipes to Compare...")
 
     dataset_to_recipe_map, metadata_map = get_datasets_and_recipes(
-        st.session_state.home_cache_time
+        timestamp=state.get_data_timestamp()
     )
 
     col1, col2 = st.columns(2)
