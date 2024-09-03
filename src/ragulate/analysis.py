@@ -48,6 +48,10 @@ class Analysis:
         feedbacks = sorted(feedbacks)
         feedbacks.reverse()
 
+        longest_feedback = 0
+        for feedback in feedbacks:
+            longest_feedback = max(longest_feedback, len(feedback))
+
         # generate an array of rainbow colors by fixing the saturation and lightness of
         # the HSL representation of color and marching around the hue.
         c = [
@@ -101,6 +105,7 @@ class Analysis:
                 jitter=1,
             )
             fig.update_layout(
+                margin_l = longest_feedback * 7,
                 boxmode="group",
                 height=height,
                 width=900,

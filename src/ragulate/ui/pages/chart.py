@@ -1,3 +1,4 @@
+import io
 import sys
 from typing import Any, Dict, List, Tuple
 
@@ -46,15 +47,22 @@ def draw_page() -> None:
 
     analysis = Analysis()
 
-    figures = analysis.box_plots_by_dataset(df=df, feedbacks=feedbacks)
+    box_plots = analysis.box_plots_by_dataset(df=df, feedbacks=feedbacks)
+    histograms = analysis.histograms_by_dataset(df=df, feedbacks=feedbacks)
 
-    if dataset not in figures:
+
+    if dataset not in box_plots and dataset not in histograms:
         st.write("Analysis failed")
     else:
-        svg_bytes = to_image(fig=figures[dataset], format="svg", scale=1.1)
+        svg_bytes = to_image(fig=box_plots[dataset], format="svg", scale=1.1)
 
         st.image(image=svg_bytes.decode("utf-8"))
-        # st.html(to_html(fig=figures[dataset], full_html=False))
+
+        g = histograms[dataset]
+        buffer = io.BytesIO()
+        g.savefig(buffer)
+        buffer.seek(0)
+        st.image(buffer.read())
 
     with button_row_container:
         write_button_row(current_page="chart")
