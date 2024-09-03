@@ -47,15 +47,13 @@ else:
         sorted_options.insert(0, SELECT_ALL_TEXT)
         st.selectbox(label=key, options=sorted_options, key=f"select_filter_{key}")
 
-
-    def set_metadata_filter():
+    def set_metadata_filter() -> None:
         filter: Dict[str, Any] = {}
         for key in metadata_options.keys():
             value = state.get_page_item(key=f"select_filter_{key}")
             if value != SELECT_ALL_TEXT:
                 filter[key] = value
         state.set_metadata_filter(filter=filter)
-
 
     col1, col2, _ = st.columns(3)
 

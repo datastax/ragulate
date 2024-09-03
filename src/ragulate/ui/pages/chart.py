@@ -37,26 +37,30 @@ if st.button("home"):
 recipes = list(state.get_selected_recipes())
 dataset = state.get_selected_dataset()
 
-df, feedbacks = get_data(
-    recipes=recipes, dataset=dataset, metadata_filter=metadata_filter, timestamp=0
-)
 
-analysis = Analysis()
-
-figures = analysis.box_plots_by_dataset(df=df, metrics=feedbacks)
-
-if dataset not in figures:
-    st.write("Analysis failed")
+if dataset is None:
+    switch_page("home")
 else:
-    svg_bytes = to_image(fig=figures[dataset], format="svg", scale=1.1)
+    df, feedbacks = get_data(
+        recipes=recipes, dataset=dataset, metadata_filter=metadata_filter, timestamp=0
+    )
 
-    st.image(image=svg_bytes.decode("utf-8"))
-    # st.html(to_html(fig=figures[dataset], full_html=False))
+    analysis = Analysis()
 
-col1, _, col3 = st.columns(3)
+    figures = analysis.box_plots_by_dataset(df=df, metrics=feedbacks)
 
-if col1.button(label="Compare"):
-    switch_page("compare")
+    if dataset not in figures:
+        st.write("Analysis failed")
+    else:
+        svg_bytes = to_image(fig=figures[dataset], format="svg", scale=1.1)
 
-if col3.button(label="Filter"):
-    switch_page("filter")
+        st.image(image=svg_bytes.decode("utf-8"))
+        # st.html(to_html(fig=figures[dataset], full_html=False))
+
+    col1, _, col3 = st.columns(3)
+
+    if col1.button(label="Compare"):
+        switch_page("compare")
+
+    if col3.button(label="Filter"):
+        switch_page("filter")

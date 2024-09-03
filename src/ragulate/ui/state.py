@@ -37,7 +37,6 @@ def set_metadata_filter(filter: Dict[str, Any]) -> None:
     st.session_state["metadata_filter"] = filter
 
 
-
 def get_selected_recipes() -> Set[str]:
     if "selected_recipes" not in st.session_state:
         clear_selected_recipes()
@@ -66,7 +65,9 @@ def set_page_item_if_empty(key: str, value: Any) -> None:
 
 
 def get_page_item(key: str) -> Any | None:
-    return st.session_state.get(key=key)
+    if key in st.session_state:
+        return st.session_state[key]
+    return None
 
 
 def set_page_loaded(page: str) -> None:

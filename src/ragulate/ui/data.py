@@ -181,7 +181,7 @@ def get_details_for_record(recipe: str, record_id: str) -> Dict[str, Any]:
         cursor = conn.cursor()
         cursor.execute(calls_query)
 
-        calls: Dict[str, List[str, Dict[str, Any]]] = {}
+        calls: Dict[str, List[Dict[str, Any]]] = {}
 
         for call in cursor.fetchall():
             reason = call[0]
