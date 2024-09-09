@@ -381,6 +381,7 @@ def get_chart_data(
 
     return reset_df, sorted(list(all_feedbacks))
 
+
 def get_metadata_options(recipes: List[str], dataset: str) -> Dict[str, Set[Any]]:
     metadata_options: Dict[str, Set[Any]] = {}
 
@@ -394,8 +395,8 @@ def get_metadata_options(recipes: List[str], dataset: str) -> Dict[str, Set[Any]
 
     # remove options with more than 50 values
     keys_to_drop = []
-    for key, values in metadata_options.items():
-        if len(values) > 50:
+    for key, choices in metadata_options.items():
+        if len(choices) > 50:
             keys_to_drop.append(key)
 
     for key in keys_to_drop:

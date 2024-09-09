@@ -18,8 +18,10 @@ def get_metadata_filter_options(
 ) -> Dict[str, Set[Any]]:
     return get_metadata_options(recipes=recipes, dataset=dataset)
 
-def filter_key(key: str, dataset:str) -> str:
+
+def filter_key(key: str, dataset: str) -> str:
     return f"select_filter_{key}_{dataset}"
+
 
 def draw_page() -> None:
     st.set_page_config(page_title="Ragulate - Filter", layout="wide")
@@ -33,7 +35,9 @@ def draw_page() -> None:
 
     metadata_filter = state.get_metadata_filter(dataset=dataset)
     for key, value in metadata_filter.items():
-        state.set_page_item_if_empty(key=filter_key(key=key, dataset=dataset), value=value)
+        state.set_page_item_if_empty(
+            key=filter_key(key=key, dataset=dataset), value=value
+        )
 
     metadata_options = get_metadata_filter_options(
         recipes=recipes, dataset=dataset, timestamp=state.get_data_timestamp()

@@ -1,6 +1,6 @@
 import json
-import sys
 import re
+import sys
 from typing import Any, Dict, List, Set, Tuple
 
 import pandas as pd
@@ -36,16 +36,17 @@ def get_data(
 ) -> Tuple[pd.DataFrame, List[str]]:
     return get_compare_data(recipes=recipes, dataset=dataset, metadata_filter=filter)
 
+
 def escape_markdown(text: str) -> str:
     # Regex pattern to escape key Markdown special characters
-    special_chars = r'([\\`*_{}[\]()#+-.!|])'
+    special_chars = r"([\\`*_{}[\]()#+-.!|])"
 
     # Escape the special characters
-    escaped_text = re.sub(special_chars, r'\\\1', text)
+    escaped_text = re.sub(special_chars, r"\\\1", text)
 
     # Handle newlines properly (replace with space or keep depending on table usage)
     # For table content, it's safer to replace newlines with spaces
-    escaped_text = escaped_text.replace('\n', ' ')
+    escaped_text = escaped_text.replace("\n", " ")
 
     return escaped_text
 
@@ -53,7 +54,6 @@ def escape_markdown(text: str) -> str:
 def draw_page() -> None:
     st.set_page_config(page_title="Ragulate - Compare", layout="wide")
     button_row_container = st.container()
-
 
     dataset = state.get_selected_dataset()
     recipes = list(state.get_selected_recipes(dataset=dataset))
@@ -115,7 +115,7 @@ def draw_page() -> None:
         compare_df,
         gridOptions=gridOptions,
         update_on=["selectionChanged"],
-        #allow_unsafe_jscode=True,
+        # allow_unsafe_jscode=True,
         height=800,
         enable_enterprise_modules=False,
     )
