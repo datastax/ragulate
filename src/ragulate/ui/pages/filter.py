@@ -19,19 +19,25 @@ def get_metadata_filter_options(
     return get_metadata_options(recipes=recipes, dataset=dataset)
 
 
+def filter_key(key: str, dataset: str) -> str:
+    return f"select_filter_{key}_{dataset}"
+
+
 def draw_page() -> None:
     st.set_page_config(page_title="Ragulate - Filter", layout="wide")
     button_row_container = st.container()
 
-    recipes = list(state.get_selected_recipes())
     dataset = state.get_selected_dataset()
+    recipes = list(state.get_selected_recipes(dataset=dataset))
     if dataset is None or len(recipes) < 2:
         switch_page("home")
         return
 
-    metadata_filter = state.get_metadata_filter()
+    metadata_filter = state.get_metadata_filter(dataset=dataset)
     for key, value in metadata_filter.items():
-        state.set_page_item_if_empty(key=f"select_filter_{key}", value=value)
+        state.set_page_item_if_empty(
+            key=filter_key(key=key, dataset=dataset), value=value
+        )
 
     metadata_options = get_metadata_filter_options(
         recipes=recipes, dataset=dataset, timestamp=state.get_data_timestamp()
@@ -40,10 +46,10 @@ def draw_page() -> None:
     def set_metadata_filter() -> None:
         filter: Dict[str, Any] = {}
         for key in metadata_options.keys():
-            value = state.get_page_item(key=f"select_filter_{key}")
+            value = state.get_page_item(key=filter_key(key=key, dataset=dataset))
             if value != SELECT_ALL_TEXT:
                 filter[key] = value
-        state.set_metadata_filter(filter=filter)
+        state.set_metadata_filter(filter=filter, dataset=dataset)
 
     for key, options in metadata_options.items():
         sorted_options = sorted(list(options))
@@ -51,7 +57,7 @@ def draw_page() -> None:
         st.selectbox(
             label=key,
             options=sorted_options,
-            key=f"select_filter_{key}",
+            key=filter_key(key=key, dataset=dataset),
             on_change=set_metadata_filter,
         )
 

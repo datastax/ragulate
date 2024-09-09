@@ -1,4 +1,5 @@
 import json
+import re
 import sys
 from typing import Any, Dict, List, Set, Tuple
 
@@ -36,17 +37,31 @@ def get_data(
     return get_compare_data(recipes=recipes, dataset=dataset, metadata_filter=filter)
 
 
+def escape_markdown(text: str) -> str:
+    # Regex pattern to escape key Markdown special characters
+    special_chars = r"([\\`*_{}[\]()#+-.!|])"
+
+    # Escape the special characters
+    escaped_text = re.sub(special_chars, r"\\\1", text)
+
+    # Handle newlines properly (replace with space or keep depending on table usage)
+    # For table content, it's safer to replace newlines with spaces
+    escaped_text = escaped_text.replace("\n", " ")
+
+    return escaped_text
+
+
 def draw_page() -> None:
     st.set_page_config(page_title="Ragulate - Compare", layout="wide")
     button_row_container = st.container()
 
-    recipes = list(state.get_selected_recipes())
     dataset = state.get_selected_dataset()
+    recipes = list(state.get_selected_recipes(dataset=dataset))
     if dataset is None or len(recipes) < 2:
         switch_page("home")
         return
 
-    filter = state.get_metadata_filter()
+    filter = state.get_metadata_filter(dataset=dataset)
     compare_df, data_cols = get_data(
         recipes=recipes,
         dataset=dataset,
@@ -75,22 +90,23 @@ def draw_page() -> None:
             columns[data_col].children[recipe] = Column(
                 field=f"{data_col}_{recipe}",
                 type=numericColumnType,
-                width=(len(recipe) * 7) + 50,
+                width=(len(recipe) * 5) + 100,
             )
         if len(recipes) == 2:
             columns[data_col].children["Diff"] = Column(
                 field=f"{data_col}__diff",
                 type=numericColumnType,
-                width=(len("Diff") * 7) + 50,
+                width=(len("Diff") * 4) + 80,
             )
 
     gb = GridOptionsBuilder.from_dataframe(compare_df)
 
-    gb.configure_default_column(autoHeight=True, wrapText=True)
+    gb.configure_default_column(autoHeight=False, wrapText=True)
     gb.configure_pagination(
-        paginationPageSize=PAGINATION_SIZE, paginationAutoPageSize=False
+        paginationPageSize=PAGINATION_SIZE, paginationAutoPageSize=False, enabled=True
     )
     gb.configure_selection(selection_mode="single", pre_selected_rows=[0])
+    gb.configure_auto_height(autoHeight=True)
 
     gridOptions = gb.build()
     gridOptions["columnDefs"] = get_column_defs(columns=columns)
@@ -98,8 +114,10 @@ def draw_page() -> None:
     data = AgGrid(
         compare_df,
         gridOptions=gridOptions,
-        update_mode=GridUpdateMode.SELECTION_CHANGED,
-        allow_unsafe_jscode=True,
+        update_on=["selectionChanged"],
+        # allow_unsafe_jscode=True,
+        height=800,
+        enable_enterprise_modules=False,
     )
 
     selected_rows = data.selected_rows
@@ -133,7 +151,9 @@ def draw_page() -> None:
         table: Dict[str, List[str]] = {"Answer": []}
         for recipe in recipes:
             answer = selected_rows[f"output_{recipe}"][0]
-            table["Answer"].append(answer)
+            if answer is None:
+                answer = ""
+            table["Answer"].append(escape_markdown(text=answer))
             for data_col in data_cols:
                 if data_col not in table:
                     table[data_col] = []

@@ -4,13 +4,7 @@ from typing import Any, Dict, List, Set
 
 import streamlit as st
 
-
-def dataset_key() -> str:
-    return f"home_dataset"
-
-
-def recipe_key(recipe: str) -> str:
-    return f"checkbox_{recipe}"
+### Get/Set Selected Dataset
 
 
 def get_selected_dataset() -> str | None:
@@ -20,41 +14,105 @@ def get_selected_dataset() -> str | None:
     return selected_dataset
 
 
-def set_selected_dataset(dataset: str) -> None:
+def set_selected_dataset(dataset: str | None) -> None:
     st.session_state["selected_dataset"] = dataset
 
 
-def clear_selected_recipes() -> None:
-    st.session_state["selected_recipes"] = set()
+### Get/Set Metadata Filter
 
 
-def get_metadata_filter() -> Dict[str, Any]:
-    if "metadata_filter" not in st.session_state:
-        st.session_state["metadata_filter"] = {}
-    metadata_filter: Dict[str, Any] = st.session_state["metadata_filter"]
+def metadata_filter_key(dataset: str) -> str:
+    return f"metadata_filter_{dataset}"
+
+
+def get_metadata_filter(dataset: str) -> Dict[str, Any]:
+    key = metadata_filter_key(dataset=dataset)
+    if key not in st.session_state:
+        st.session_state[key] = {}
+    metadata_filter: Dict[str, Any] = st.session_state[key]
     return metadata_filter
 
 
-def set_metadata_filter(filter: Dict[str, Any]) -> None:
-    st.session_state["metadata_filter"] = filter
+def set_metadata_filter(filter: Dict[str, Any], dataset: str) -> None:
+    st.session_state[metadata_filter_key(dataset=dataset)] = filter
 
 
-def get_selected_recipes() -> Set[str]:
-    if "selected_recipes" not in st.session_state:
-        clear_selected_recipes()
-    selected_recipes: Set[str] = st.session_state["selected_recipes"]
+### Get/Set Selected Recipes
+
+
+def selected_recipes_key(dataset: str) -> str:
+    return f"selected_recipes_{dataset}"
+
+
+def get_selected_recipes(dataset: str | None) -> Set[str]:
+    if dataset is None:
+        return set()
+    key = selected_recipes_key(dataset=dataset)
+    if key not in st.session_state:
+        st.session_state[key] = set()
+    selected_recipes: Set[str] = st.session_state[key]
     return selected_recipes
 
 
-def get_recipe_state(recipe: str) -> bool:
-    return recipe in get_selected_recipes()
-
-
-def set_recipe_state(recipe: str, value: bool) -> None:
+def set_recipe_state(recipe: str, value: bool, dataset: str | None) -> None:
+    if dataset is None:
+        return
+    key = selected_recipes_key(dataset=dataset)
+    if key not in st.session_state:
+        st.session_state[key] = set()
     if value:
-        st.session_state["selected_recipes"].add(recipe)
+        st.session_state[key].add(recipe)
     else:
-        st.session_state["selected_recipes"].discard(recipe)
+        st.session_state[key].discard(recipe)
+
+
+### Get/Set Page Loaded
+
+
+def page_loaded_key(page: str) -> str:
+    return f"page_{page}"
+
+
+def get_page_loaded(page: str) -> bool:
+    key = page_loaded_key(page=page)
+    return st.session_state.get(key, False)
+
+
+def set_page_loaded(page: str) -> None:
+    key = page_loaded_key(page=page)
+    st.session_state[key] = True
+
+
+def clear_page_loaded(page: str) -> None:
+    key = page_loaded_key(page=page)
+    if key in st.session_state:
+        del st.session_state[key]
+
+
+### Get/Set Data Timestamp
+
+
+def data_timestamp_key() -> str:
+    return "data_timestamp"
+
+
+def get_data_timestamp() -> float:
+    key = data_timestamp_key()
+    return st.session_state.get(key, 0.0)
+
+
+def set_data_timestamp() -> None:
+    key = data_timestamp_key()
+    st.session_state[key] = time.time()
+
+
+### Get/Set Page Item
+
+
+def get_page_item(key: str) -> Any | None:
+    if key in st.session_state:
+        return st.session_state[key]
+    return None
 
 
 def set_page_item(key: str, value: Any) -> None:
@@ -64,30 +122,3 @@ def set_page_item(key: str, value: Any) -> None:
 def set_page_item_if_empty(key: str, value: Any) -> None:
     if key not in st.session_state:
         st.session_state[key] = value
-
-
-def get_page_item(key: str) -> Any | None:
-    if key in st.session_state:
-        return st.session_state[key]
-    return None
-
-
-def set_page_loaded(page: str) -> None:
-    st.session_state[f"page_{page}"] = True
-
-
-def get_page_loaded(page: str) -> bool:
-    return st.session_state.get(f"page_{page}", False)
-
-
-def clear_page_loaded(page: str) -> None:
-    if f"page_{page}" in st.session_state:
-        del st.session_state[f"page_{page}"]
-
-
-def set_data_timestamp() -> None:
-    st.session_state["data_timestamp"] = time.time()
-
-
-def get_data_timestamp() -> float:
-    return st.session_state.get("data_timestamp", 0.0)
