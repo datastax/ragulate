@@ -65,7 +65,7 @@ Note: It is helpful to have a `**kwargs` param in your pipeline method definitio
 ### Summary
 
 ```sh
-usage: ragulate [-h] {download,ingest,query,compare} ...
+usage: ragulate [-h] {download,ingest,query,compare,run,debug} ...
 
 RAGu-late CLI tool.
 
@@ -73,11 +73,42 @@ options:
   -h, --help            show this help message and exit
 
 commands:
+  {download,ingest,query,compare,run,debug}
     download            Download a dataset
     ingest              Run an ingest pipeline
-    query               Run an query pipeline
+    query               Run a query pipeline
     compare             Compare results from 2 (or more) recipes
-    run                 Run an experiment from a config file
+    debug               Show the tru-lens dashboard to debug a recipe.
+```
+
+#### Query
+
+```sh
+usage: ragulate query [-h] [-n NAME] -s SCRIPT -m METHOD [--var-name VAR_NAME] [--var-value VAR_VALUE] [--dataset DATASET] [--subset SUBSET]
+                      [--sample SAMPLE] [--seed SEED] [--restart] [--provider {OpenAI,AzureOpenAI,HuggingFace}] [--model MODEL]
+
+options:
+  -h, --help            show this help message and exit
+  -n NAME, --name NAME  A unique name for the query pipeline
+  -s SCRIPT, --script SCRIPT
+                        The path to the python script that contains the query method
+  -m METHOD, --method METHOD
+                        The name of the method in the script to run query
+  --var-name VAR_NAME   The name of a variable in the query script. This should be paired with a `--var-value` argument and can be passed
+                        multiple times.
+  --var-value VAR_VALUE
+                        The value of a variable in the query script. This should be paired with a `--var-name` argument and can be passed
+                        multiple times.
+  --dataset DATASET     The name of a dataset to query. This can be passed multiple times.
+  --subset SUBSET       The subset of the dataset to query. Only valid when a single dataset is passed.
+  --sample SAMPLE       A decimal percentage of the queries to sample for the test. Default is 1.0.
+  --seed SEED           Random seed to use for query sampling. Ensures reproducibility of tests.
+  --restart             Flag to restart the query process instead of resuming. WARNING: this will delete all existing data for this query name,
+                        not just the data for the tagged datasets.
+  --provider {OpenAI,AzureOpenAI,HuggingFace}
+                        The name of the LLM Provider to use for Evaluation.
+  --model MODEL         The name or id of the LLM model or deployment to use for Evaluation. Generally used in combination with the '--provider'
+                        param.
 ```
 
 ### Example
@@ -85,28 +116,6 @@ commands:
 For the examples below, we will use the example experiment [open_ai_chunk_size_and_k.py](examples/open_ai_chunk_size_and_k.py)
 and see how the RAG metrics change for changes in `chunk_size` and `k` (number of documents retrieved).
 
-There are two ways to run Ragulate to run an experiment. Either define an experiment with a config file or execute it manually step by step.
-
-#### Via Config File
-
-**Note: Running via config file is a new feature and it is not as stable as running manually.**
-
-1. Create a yaml config file with a similar format to the example config: [example_config.yaml](examples/config.yaml).  This defines the same test as shown manually below.
-
-1. Execute it with a single command:
-
-    ```
-    ragulate run example_config.yaml
-    ```
-
-    This will:
-    * Download the test datasets
-    * Run the ingest pipelines
-    * Run the query pipelines
-    * Output an analysis of the results.
-
-
-#### Manually
 
 1. Download a dataset. See available datasets here: https://llamahub.ai/?tab=llama_datasets
   * If you are unsure where to start, recommended datasets are:
@@ -130,6 +139,8 @@ There are two ways to run Ragulate to run an experiment. Either define an experi
       ragulate ingest -n chunk_size_100 -s open_ai_chunk_size_and_k.py -m ingest \
       --var-name chunk_size --var-value 100 --dataset BraintrustCodaHelpDesk --dataset BlockchainSolana
       ```
+
+    Alternatively, do your ingestion manually without Ragulate.
 
 3. Run query and evaluations on the datasets using methods:
 
@@ -158,14 +169,14 @@ There are two ways to run Ragulate to run an experiment. Either define an experi
       --var-name chunk_size --var-value 100  --var-name k --var-value 5 --dataset BraintrustCodaHelpDesk --dataset BlockchainSolana
       ```
 
-1. Run a compare to get the results:
+4. Use the UI to explore your experiments `ragulate-ui`
 
-    Example:
-      ```
-      ragulate compare -r chunk_size_100_k_2 -r chunk_size_200_k_2 -r chunk_size_100_k_5 -r chunk_size_200_k_5
-      ```
+  * Select your dataset
+  * Choose which recipes to compare
+  * Optionally filter the datasets with 'Filter'
+  * View charts with 'Chart'
+  * Compare responses side-by-side with 'Compare'
 
-    This will output 2 png files. one for each dataset.
 
 ## Current Limitations
 
@@ -175,3 +186,31 @@ There are two ways to run Ragulate to run an experiment. Either define an experi
 ## Development
 
 Note that this project uses [uv](https://docs.astral.sh/uv/) for package management. Install it with `make install-uv`.
+
+
+## Deprecated
+
+### Running via Config File
+
+1. Create a yaml config file with a similar format to the example config: [example_config.yaml](examples/config.yaml).  This defines the same test as shown manually below.
+
+1. Execute it with a single command:
+
+    ```
+    ragulate run example_config.yaml
+    ```
+
+    This will:
+    * Download the test datasets
+    * Run the ingest pipelines
+    * Run the query pipelines
+    * Output an analysis of the results.
+
+### Performing comparisons via the CLI:
+
+Example:
+  ```
+  ragulate compare -r chunk_size_100_k_2 -r chunk_size_200_k_2 -r chunk_size_100_k_5 -r chunk_size_200_k_5
+  ```
+
+This will output 2 png files. one for each dataset.
