@@ -1,6 +1,6 @@
 [project]
 name = "ragulate"
-version = "0.0.14rc3"
+version = "0.0.14"
 description = "A tool for evaluating RAG pipelines"
 authors = [{ name = "Eric Pinzur", email = "eric.pinzur@datastax.com" }]
 maintainers = [{name = "Datastax"}]
