@@ -84,10 +84,7 @@ def setup_query(subparsers) -> None:  # type: ignore[no-untyped-def]
         choices=[
             "OpenAI",
             "AzureOpenAI",
-            "Bedrock",
-            "LiteLLM",
-            "Langchain",
-            "Huggingface",
+            "HuggingFace",
         ],
         default="OpenAI",
     )
@@ -96,6 +93,7 @@ def setup_query(subparsers) -> None:  # type: ignore[no-untyped-def]
         type=str,
         help="The name or id of the LLM model or deployment to use for Evaluation. "
         "Generally used in combination with the `--provider` param.",
+        default="gpt-4o-mini",
     )
     query_parser.set_defaults(func=lambda args: call_query(**vars(args)))
 
