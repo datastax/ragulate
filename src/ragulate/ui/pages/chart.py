@@ -28,13 +28,13 @@ def draw_page() -> None:
     st.set_page_config(page_title="Ragulate - Chart", layout="wide")
     button_row_container = st.container()
 
-    recipes = list(state.get_selected_recipes())
     dataset = state.get_selected_dataset()
+    recipes = list(state.get_selected_recipes(dataset=dataset))
     if dataset is None or len(recipes) < 2:
         switch_page("home")
         return
 
-    metadata_filter = state.get_metadata_filter()
+    metadata_filter = state.get_metadata_filter(dataset=dataset)
     st.caption("metadata filter:")
     st.json(metadata_filter)
 

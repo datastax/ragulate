@@ -70,6 +70,7 @@ def get_metadata_options_for_recipe(recipe: str, dataset: str) -> Dict[str, List
             app_id = "{dataset}"
     """
     unique_values = defaultdict(set)
+    standard_types = (int, float, str, bool)
     with query_database(recipe=recipe, query=query) as cursor:
         while True:
             rows = cursor.fetchmany(100)  # Fetch 100 rows at a time
@@ -78,7 +79,8 @@ def get_metadata_options_for_recipe(recipe: str, dataset: str) -> Dict[str, List
             for row in rows:
                 metadata = json.loads(row[0])
                 for key, value in metadata.items():
-                    unique_values[key].add(value)
+                    if isinstance(value, standard_types):
+                        unique_values[key].add(value)
 
     # Convert sets to lists
     return {str(key): list(values) for key, values in unique_values.items()}
@@ -379,7 +381,6 @@ def get_chart_data(
 
     return reset_df, sorted(list(all_feedbacks))
 
-
 def get_metadata_options(recipes: List[str], dataset: str) -> Dict[str, Set[Any]]:
     metadata_options: Dict[str, Set[Any]] = {}
 
@@ -390,5 +391,14 @@ def get_metadata_options(recipes: List[str], dataset: str) -> Dict[str, Set[Any]
                 metadata_options[key] = set(values)
             else:
                 metadata_options[key] = metadata_options[key].union(values)
+
+    # remove options with more than 50 values
+    keys_to_drop = []
+    for key, values in metadata_options.items():
+        if len(values) > 50:
+            keys_to_drop.append(key)
+
+    for key in keys_to_drop:
+        del metadata_options[key]
 
     return metadata_options
