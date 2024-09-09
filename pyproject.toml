@@ -28,6 +28,12 @@ dependencies = [
     "nltk==3.8.1",
 ]
 
+[project.urls]
+Homepage = "https://pypi.org/project/ragulate/"
+Repository = "https://github.com/datastax/ragulate.git"
+Issues = "https://github.com/datastax/ragulate/issues"
+
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
